@@ -1,9 +1,7 @@
 Project Deployment Guide
 
-This document provides simple step by step instructions for deploying and running this project. You do not need to be a developer to follow these steps.
+This document provides simple step by step instructions for deploying and running this project. 
 
-Prerequisites
-Before you start, make sure you have installed Git, PHP, and Composer on your computer.
 
 Step 1: Get the Code
 Open your terminal or command prompt.
@@ -38,4 +36,4 @@ Step 5: Start the Application
 To start the project, run:
 php artisan serve
 
-This will give you a link like http://127.0.0.1:8000. Open that link in your web browser to view the project.
+
