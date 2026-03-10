@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>New Ticket Created</title>
 </head>
+
 <body style="font-family: Arial, sans-serif; background: #f7f7f7; padding: 30px;">
 
     <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 25px; border-radius: 8px;">
@@ -44,12 +46,12 @@
         <br>
 
         @php
-            // $ticketUrl = config('app.frontend_url') . '/tickets/' . $ticket_id;
-             $ticketUrl = rtrim(config('app.url'), '/') . '/tickets/' . $ticket_id;
+        // $ticketUrl = config('app.frontend_url') . '/tickets/' . $ticket_id;
+        $ticketUrl = rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/tickets/' . $ticket_id;
         @endphp
 
         <a href="{{ $ticketUrl }}"
-           style="display:inline-block;
+            style="display:inline-block;
                   background:#007bff;
                   color:#ffffff !important;
                   padding:10px 18px;
@@ -69,4 +71,5 @@
     </div>
 
 </body>
+
 </html>

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController as BaseController;
@@ -304,16 +305,70 @@ class TicketController extends BaseController
                 $query->where('department_id', $user->department_id);
             }
 
-            $get_ticket = $query->orderBy('id', 'desc')->paginate(10);
+            // If the frontend does not pass any pagination parameters (e.g., for CSV export), return all records.
+            // We use paginate(100000) instead of get() to keep the exact same JSON structure (response.data.data) so we don't break frontend loops.
+            if (!$request->has('page') && !$request->has('per_page')) {
+                $get_ticket = $query->orderBy('id', 'desc')->paginate(100000);
+            } else {
+                $get_ticket = $query->orderBy('id', 'desc')->paginate($request->input('per_page', 10));
+            }
+            // Pre-calculate aggregates for the Reports Details
+            $closedTickets = Tickets::where('status', 'Closed')->get();
+            $deptStats = [];
+            $assigneeStats = [];
+            $globalSum = 0;
+            $globalCount = 0;
+
+            foreach ($closedTickets as $ct) {
+                if ($ct->created_at && $ct->updated_at) {
+                    $minutes = Carbon::parse($ct->created_at)->diffInMinutes(Carbon::parse($ct->updated_at));
+
+                    if (!isset($deptStats[$ct->department_id])) {
+                        $deptStats[$ct->department_id] = ['sum' => 0, 'count' => 0];
+                    }
+                    $deptStats[$ct->department_id]['sum'] += $minutes;
+                    $deptStats[$ct->department_id]['count']++;
+
+                    if ($ct->assignee_id) {
+                        if (!isset($assigneeStats[$ct->assignee_id])) {
+                            $assigneeStats[$ct->assignee_id] = ['sum' => 0, 'count' => 0];
+                        }
+                        $assigneeStats[$ct->assignee_id]['sum'] += $minutes;
+                        $assigneeStats[$ct->assignee_id]['count']++;
+                    }
+
+                    $globalSum += $minutes;
+                    $globalCount++;
+                }
+            }
+
+            $globalAvgHours = $globalCount > 0 ? floor(($globalSum / $globalCount) / 60) : 0;
+            $globalAvgMins = $globalCount > 0 ? round(($globalSum / $globalCount) % 60) : 0;
+            $globalAvgFormatted = $globalAvgHours > 0 ? "{$globalAvgHours} hrs {$globalAvgMins} mins" : "{$globalAvgMins} mins";
+
+            $totalVolume = Tickets::count(); // Global Ticket Volume Over Time
 
             $baseUrl = url('public/');
-            $get_ticket->getCollection()->transform(function ($ticket) use ($baseUrl) {
+            $get_ticket->getCollection()->transform(function ($ticket) use ($baseUrl, $deptStats, $assigneeStats, $globalAvgFormatted, $totalVolume) {
                 if ($ticket->images) {
                     $ticket->images->transform(function ($image) use ($baseUrl) {
                         $image->image_path = $baseUrl . '/' . $image->image_path;
                         return $image;
                     });
                 }
+
+                // Add missing report details
+                $ticket->is_overdue = ($ticket->status !== 'Closed' && $ticket->expected_resolution_time !== null && Carbon::parse($ticket->expected_resolution_time)->isPast());
+
+                $deptAvg = ($ticket->department_id && isset($deptStats[$ticket->department_id])) ? ($deptStats[$ticket->department_id]['sum'] / $deptStats[$ticket->department_id]['count']) : 0;
+                $ticket->avg_resolution_time_per_department = $deptAvg > 0 ? floor($deptAvg / 60) . ' hrs ' . round($deptAvg % 60) . ' mins' : 'N/A';
+
+                $assgnAvg = ($ticket->assignee_id && isset($assigneeStats[$ticket->assignee_id])) ? ($assigneeStats[$ticket->assignee_id]['sum'] / $assigneeStats[$ticket->assignee_id]['count']) : 0;
+                $ticket->avg_resolution_time_per_assignee = $assgnAvg > 0 ? floor($assgnAvg / 60) . ' hrs ' . round($assgnAvg % 60) . ' mins' : 'N/A';
+
+                $ticket->average_resolution_time = $globalAvgFormatted;
+                $ticket->ticket_volume_over_time = $totalVolume;
+
                 return $ticket;
             });
 
@@ -371,7 +426,6 @@ class TicketController extends BaseController
             } else {
                 return $this->sendError('Error.', ['error' => 'Ticket not found'], 401);
             }
-
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
         }
@@ -559,7 +613,7 @@ class TicketController extends BaseController
         }
 
         // If reassignment requested, enforce role check
-        if ($isReassign && Auth::guard('api')->user() ? ->role !== 'admin') {
+        if ($isReassign && Auth::guard('api')->user()?->role !== 'admin') {
             return response()->json([
                 'message' => 'Only Admins can reassign tickets.',
                 'status'  => 403,
@@ -843,8 +897,8 @@ class TicketController extends BaseController
 
         $overdueCount = $weeklyTickets->filter(function ($ticket) {
             return $ticket->status !== 'Closed' &&
-            $ticket->expected_resolution_time !== null &&
-            Carbon::parse($ticket->expected_resolution_time)->isPast();
+                $ticket->expected_resolution_time !== null &&
+                Carbon::parse($ticket->expected_resolution_time)->isPast();
         })->count();
 
         $resolutionTimes = $closedTickets->map(function ($ticket) {
@@ -895,5 +949,4 @@ class TicketController extends BaseController
 
         return view('tickets.view', compact('ticket'));
     }
-
 }

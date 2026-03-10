@@ -118,7 +118,7 @@
                 <p>
                     <strong>Status:</strong>
                     @php
-                        $statusClass = strtolower($ticket_status);
+                    $statusClass = strtolower($ticket_status);
                     @endphp
 
                     <span class="badge badge-{{ $statusClass }}">
@@ -131,8 +131,8 @@
             </div>
 
             @php
-                // $ticketUrl = config('app.frontend_url') . '/tickets/' . $ticket_id;
-                $ticketUrl = rtrim(config('app.url'), '/') . '/tickets/' . $ticket_id;
+            // $ticketUrl = config('app.frontend_url') . '/tickets/' . $ticket_id;
+            $ticketUrl = rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/tickets/' . $ticket_id;
             @endphp
 
             <a href="{{ $ticketUrl }}" class="btn">
