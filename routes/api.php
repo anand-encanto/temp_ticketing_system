@@ -1,21 +1,19 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\AdminTicketController;
-use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Admin\LocationController;
-use App\Http\Controllers\Admin\SubscriptionPlanController;
-use App\Http\Controllers\Api\CommentController;
-use App\Http\Controllers\Api\HomeController;
-use App\Http\Controllers\Api\LoginController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\TicketController;
-use App\Http\Controllers\Api\TicketSummaryController;
-use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminTicketController;
+use App\Http\Controllers\Api\LoginController;
+use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\TicketController;
+use App\Http\Controllers\Api\TicketSummaryController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +25,18 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
+Route::get('test-api', function () {
+    return response()->json([
+        'status' => true,
+        'message' => 'API is working successfully on McDonalds server',
+        'server' => request()->getHost(),
+        'time' => now()
+    ]);
+});
+
+
 
 // Location Routes
 Route::get('location/list', [LocationController::class, 'getAllLocations']);
@@ -80,8 +90,6 @@ Route::middleware('AdminLogin')->group(function () {
 	});
 });
 
-
-
 // Standard User
 Route::middleware('Login')->group(function () {
 	// User
@@ -131,12 +139,3 @@ Route::middleware('ExecutiveLogin')->group(function () {
 Route::get('get_countries', [HomeController::class, 'get_countries'])->name('get_countries');
 Route::get('get_states/{id}', [HomeController::class, 'get_states'])->name('get_states');
 Route::get('get_cities/{id}', [HomeController::class, 'get_cities'])->name('get_cities');
-
-
-
-Route::get('subscription-plans/all', [SubscriptionPlanController::class, 'index']);
-        Route::post('subscription-plans/add', [SubscriptionPlanController::class, 'store']);
-        Route::get('subscription-plans/{id}', [SubscriptionPlanController::class, 'show']);
-        Route::put('subscription-plans/{id}', [SubscriptionPlanController::class, 'update']);
-
-		

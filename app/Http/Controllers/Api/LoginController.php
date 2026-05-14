@@ -68,19 +68,17 @@ class LoginController extends BaseController
 
     public function login(Request $request)
     {
-        
         $validator = Validator::make($request->all(), [
             'email_or_username' => 'required|string',
             'password' => 'required|string',
         ]);
-        
+
         if ($validator->fails()) {
             return $this->sendError('Validation Error.', $validator->errors(), 422);
         }
-        
+
         $login_type = filter_var($request->email_or_username, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        
-        // return $this->sendResponse('successful', 'Successfully logged in');
+
         if (Auth::attempt([$login_type => $request->email_or_username, 'password' => $request->password])) {
             $user = Auth::user();
             $token = $user->createToken('MyApp')->accessToken;

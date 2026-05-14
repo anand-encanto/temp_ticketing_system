@@ -43,4 +43,9 @@ class Tickets extends Model
         return $this->hasMany(Comment::class, 'ticket_id', 'id');
     }
 
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
+
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController as BaseController;
@@ -8,13 +7,104 @@ use App\Models\TicketImages;
 use App\Models\Tickets;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Validator;
 
 class TicketController extends BaseController
 {
+
+    /*public function createTicket(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'reported_by' => 'required|string|max:255',
+            'department_id' => 'required|exists:departments,id',
+            'location_id' => 'required|exists:locations,id',
+            'priority' => 'required|in:Low,Medium,High,Urgent',
+            'issue' => 'required|string',
+            // 'status' => 'required|in:New,Assigned,In Progress,Pending Confirmation,Resolved,Closed',
+            'assignee_id' => 'nullable|exists:users,id',
+            'expected_resolution_time' => 'nullable|date',
+            'secondary_contact_id' => 'nullable|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'status' => 422,
+                    'error'  => true,
+                ],
+                422
+            );
+        }
+
+        $model               = new Tickets();
+        $model->title        = $request->title;
+        $model->description  = $request->description;
+        $model->reported_by  = $request->reported_by;
+        $model->department_id   = $request->department_id;
+        $model->location_id     = $request->location_id;
+        $model->priority        = $request->priority;
+        $model->submitter_id    = $user->id;
+        $model->issue           = $request->issue;
+        $model->status          = 'New';
+
+        if ($request->hasFile('video')) {
+            $image = $request->file('video');
+            $directory = public_path('uploads/tickets');
+            $imageFileName = time() . '_' . $image->getClientOriginalName();
+
+            if (!file_exists($directory)) {
+                mkdir($directory, 0777, true);
+            }
+            $image->move($directory, $imageFileName);
+
+            $model->video = $imageFileName;
+        }
+
+
+        $model->save();
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $directory = public_path('uploads/tickets');
+                $imagePath = $this->uploadFile($image, $directory);
+                TicketImages::create([
+                    'ticket_id'      => $model->id,
+                    'image_path'     => $imagePath,
+                ]);
+            }
+        }
+        $title          = 'Ticket Submitted';
+
+        $deptUsers = User::where('department_id', $request->department_id)->get();
+
+        foreach ($deptUsers as $deptUser) {
+            Notification::create([
+                'user_id' => $deptUser->id,
+                'ticket_id' => $model->id,
+                'trigger_event' => 'Ticket Created',
+                'title' => "New Ticket Created",
+                'message' => "A new ticket {$title} has been created in your department.",
+            ]);
+        }
+
+
+        $ticket_id      = $model->id;
+        $trigger_event  = 'Ticket Created';
+        $recipient_id   = null;
+        $title          = 'Ticket Submitted';
+        $message        = 'Hello, '.$user->name.' your ticket has been submitted successfully';
+        $result_add     = addNotification($ticket_id,$trigger_event,$recipient_id,$user->id,$title,$message,'unread'); 
+
+        return $this->sendResponse($model, 'Ticket Submitted');
+    }*/
+
     public function createTicket(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -163,6 +253,94 @@ class TicketController extends BaseController
         return $this->sendResponse($model, 'Ticket Submitted');
     }
 
+    // My Ticket
+    /* public function getMyTickets(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        try {
+            $query = Tickets::with([
+                'images:id,ticket_id,image_path',
+                'department:id,name',
+                'location:id,name',
+                'submit_by:id,name',
+                'assign_to:id,name',
+                'comment' => function ($query) {
+                    $query->select('id', 'ticket_id', 'comment', 'user_id','created_at')->with('user:id,name');
+                }
+            ]);
+
+            // Filter by Department
+            if ($request->has('department_id')) {
+                $query->where('department_id', $request->department_id);
+            }
+
+            // Filter by Location
+            if ($request->has('location_id')) {
+                $query->where('location_id', $request->location_id);
+            }
+
+            // Filter by Status
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by Priority
+            if ($request->has('priority')) {
+                $query->where('priority', $request->priority);
+            }
+
+           if ($request->has('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    if (is_numeric($search)) {
+                        $q->where('id', $search);
+                    } else {
+                        $q->where('title', 'like', "%$search%")
+                          ->orWhere('description', 'like', "%$search%");
+                    }
+                });
+            }
+
+
+            $get_ticket = $query->where(['submitter_id'=>$user->id])->paginate(10);
+            
+
+            $baseUrl = url('');
+
+            $get_ticket->getCollection()->transform(function ($ticket) use ($baseUrl) {
+
+                // ✅ For multiple images (collection relationship)
+                if ($ticket->images && $ticket->images->count()) {
+                    $ticket->images->transform(function ($image) use ($baseUrl) {
+                        $image->image_path = $baseUrl . '/public/' . $image->image_path;
+                        return $image;
+                    });
+                }
+
+                // ✅ For single video field (string)
+                if (!empty($ticket->video)) {
+                    $ticket->video = $baseUrl . '/public/uploads/tickets/' . $ticket->video;
+                }
+
+                return $ticket;
+            });
+
+
+
+            
+            
+            if ($get_ticket->isEmpty()) {
+                return $this->sendError('No data found.', ['error' => 'No data found'], 404);
+            }
+
+            return $this->sendResponse($get_ticket, 'All Ticket list');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong.', $e->getMessage(), 422);
+        }
+    }*/
+
     public function getMyTickets(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -211,12 +389,8 @@ class TicketController extends BaseController
                 });
             }
 
-            $user->department_id = 15;
-
             // ✅ Tickets submitted by the logged-in user (optional)
             $get_ticket = $query->where('submitter_id', $user->id)->orWhere('department_id', $user->department_id)->orderBy('id', 'desc')->paginate(10);
-
-            // dd($get_ticket->count(), $user->department_id, $get_ticket);
 
             $baseUrl = url('');
 
@@ -247,7 +421,146 @@ class TicketController extends BaseController
         }
     }
 
-    // All Ticket
+    // public function getAllTickets(Request $request)
+    // {
+    //     $user = Auth::guard('api')->user();
+
+    //     try {
+    //         $query = Tickets::with([
+    //             'images:id,ticket_id,image_path',
+    //             'department:id,name',
+    //             'location:id,name',
+    //             'submit_by:id,name',
+    //             'assign_to:id,name',
+    //             'comment' => function ($query) {
+    //                 $query->select('id', 'ticket_id', 'comment', 'user_id', 'created_at')->with('user:id,name');
+    //             },
+    //         ]);
+
+    //         if ($request->has('search')) {
+    //             $search = $request->search;
+    //             $query->where(function ($q) use ($search) {
+    //                 $q->where('title', 'like', "%$search%")
+    //                     ->orWhere('description', 'like', "%$search%")
+    //                     ->orWhere('id', $search);
+    //             });
+    //         }
+
+    //         // Filter by Department
+    //         if ($request->has('department_id')) {
+    //             $query->where('department_id', $request->department_id);
+    //         }
+
+    //         // Filter by Location
+    //         if ($request->has('location_id')) {
+    //             $query->where('location_id', $request->location_id);
+    //         }
+
+    //         // Filter by Status
+    //         if ($request->has('status')) {
+    //             $query->where('status', $request->status);
+    //         }
+
+    //         // Filter by Priority
+    //         if ($request->has('priority')) {
+    //             $query->where('priority', $request->priority);
+    //         }
+
+    //         // Filter by Date Range (created_at)
+    //         if ($request->has('start_date') && $request->has('end_date')) {
+    //             $query->whereBetween('created_at', [
+    //                 $request->start_date . ' 00:00:00',
+    //                 $request->end_date . ' 23:59:59',
+    //             ]);
+    //         }
+
+    //         if ($user->role == 'department_head') {
+    //             $query->where('department_id', $user->department_id);
+    //         }
+
+    //         // If the frontend does not pass any pagination parameters (e.g., for CSV export), return all records.
+    //         // We use paginate(100000) instead of get() to keep the exact same JSON structure (response.data.data) so we don't break frontend loops.
+    //         if (! $request->has('page') && ! $request->has('per_page')) {
+    //             $get_ticket = $query->orderBy('id', 'desc')->paginate(100000);
+    //         } else {
+    //             $get_ticket = $query->orderBy('id', 'desc')->paginate($request->input('per_page', 10));
+    //         }
+    //         // Pre-calculate aggregates for the Reports Details
+    //         $closedTickets = Tickets::where('status', 'Closed')->get();
+    //         $deptStats     = [];
+    //         $assigneeStats = [];
+    //         $globalSum     = 0;
+    //         $globalCount   = 0;
+
+    //         foreach ($closedTickets as $ct) {
+    //             if ($ct->created_at && $ct->updated_at) {
+    //                 $minutes = Carbon::parse($ct->created_at)->diffInMinutes(Carbon::parse($ct->updated_at));
+
+    //                 if (! isset($deptStats[$ct->department_id])) {
+    //                     $deptStats[$ct->department_id] = ['sum' => 0, 'count' => 0];
+    //                 }
+    //                 $deptStats[$ct->department_id]['sum'] += $minutes;
+    //                 $deptStats[$ct->department_id]['count']++;
+
+    //                 if ($ct->assignee_id) {
+    //                     if (! isset($assigneeStats[$ct->assignee_id])) {
+    //                         $assigneeStats[$ct->assignee_id] = ['sum' => 0, 'count' => 0];
+    //                     }
+    //                     $assigneeStats[$ct->assignee_id]['sum'] += $minutes;
+    //                     $assigneeStats[$ct->assignee_id]['count']++;
+    //                 }
+
+    //                 $globalSum += $minutes;
+    //                 $globalCount++;
+    //             }
+    //         }
+
+    //         $globalAvgHours     = $globalCount > 0 ? floor(($globalSum / $globalCount) / 60) : 0;
+    //         $globalAvgMins      = $globalCount > 0 ? round(($globalSum / $globalCount) % 60) : 0;
+    //         $globalAvgFormatted = $globalAvgHours > 0 ? "{$globalAvgHours} hrs {$globalAvgMins} mins" : "{$globalAvgMins} mins";
+
+    //         $totalVolume = Tickets::count(); // Global Ticket Volume Over Time
+
+    //         $baseUrl = url('public/');
+    //         $get_ticket->getCollection()->transform(function ($ticket) use ($baseUrl, $deptStats, $assigneeStats, $globalAvgFormatted, $totalVolume) {
+    //             if ($ticket->images) {
+    //                 $ticket->images->transform(function ($image) use ($baseUrl) {
+    //                     $image->image_path = $baseUrl . '/' . $image->image_path;
+    //                     return $image;
+    //                 });
+    //             }
+
+    //             // Add missing report details
+    //             $ticket->is_overdue = ($ticket->status !== 'Closed' && $ticket->expected_resolution_time !== null && Carbon::parse($ticket->expected_resolution_time)->isPast());
+
+    //             $deptAvg                                    = ($ticket->department_id && isset($deptStats[$ticket->department_id])) ? ($deptStats[$ticket->department_id]['sum'] / $deptStats[$ticket->department_id]['count']) : 0;
+    //             $ticket->avg_resolution_time_per_department = $deptAvg > 0 ? floor($deptAvg / 60) . ' hrs ' . round($deptAvg % 60) . ' mins' : 'N/A';
+
+    //             $assgnAvg                                 = ($ticket->assignee_id && isset($assigneeStats[$ticket->assignee_id])) ? ($assigneeStats[$ticket->assignee_id]['sum'] / $assigneeStats[$ticket->assignee_id]['count']) : 0;
+    //             $ticket->avg_resolution_time_per_assignee = $assgnAvg > 0 ? floor($assgnAvg / 60) . ' hrs ' . round($assgnAvg % 60) . ' mins' : 'N/A';
+
+    //             $ticket->average_resolution_time = $globalAvgFormatted;
+    //             $ticket->ticket_volume_over_time = $totalVolume;
+
+    //             return $ticket;
+    //         });
+
+    //         if (! empty($get_ticket->video)) {
+    //             $get_ticket->video_full_url = $baseUrl . 'uploads/tickets/' . ltrim($get_ticket->video, '/');
+    //         } else {
+    //             $get_ticket->video_full_url = null;
+    //         }
+
+    //         if ($get_ticket->isEmpty()) {
+    //             return $this->sendError('No data found.', ['error' => 'No data found'], 404);
+    //         }
+
+    //         return $this->sendResponse($get_ticket, 'All Ticket list');
+    //     } catch (\Exception $e) {
+    //         return $this->sendError('Something went wrong.', $e->getMessage(), 422);
+    //     }
+    // }
+
     public function getAllTickets(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -260,10 +573,12 @@ class TicketController extends BaseController
                 'submit_by:id,name',
                 'assign_to:id,name',
                 'comment' => function ($query) {
-                    $query->select('id', 'ticket_id', 'comment', 'user_id', 'created_at')->with('user:id,name');
+                    $query->select('id', 'ticket_id', 'comment', 'user_id', 'created_at')
+                        ->with('user:id,name');
                 },
             ]);
 
+            // Search
             if ($request->has('search')) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
@@ -273,27 +588,24 @@ class TicketController extends BaseController
                 });
             }
 
-            // Filter by Department
+            // Filters
             if ($request->has('department_id')) {
                 $query->where('department_id', $request->department_id);
             }
 
-            // Filter by Location
             if ($request->has('location_id')) {
                 $query->where('location_id', $request->location_id);
             }
 
-            // Filter by Status
             if ($request->has('status')) {
                 $query->where('status', $request->status);
             }
 
-            // Filter by Priority
             if ($request->has('priority')) {
                 $query->where('priority', $request->priority);
             }
 
-            // Filter by Date Range (created_at)
+            // Date range filter
             if ($request->has('start_date') && $request->has('end_date')) {
                 $query->whereBetween('created_at', [
                     $request->start_date . ' 00:00:00',
@@ -301,38 +613,44 @@ class TicketController extends BaseController
                 ]);
             }
 
+            // Department head restriction
             if ($user->role == 'department_head') {
                 $query->where('department_id', $user->department_id);
             }
 
-            // If the frontend does not pass any pagination parameters (e.g., for CSV export), return all records.
-            // We use paginate(100000) instead of get() to keep the exact same JSON structure (response.data.data) so we don't break frontend loops.
-            if (!$request->has('page') && !$request->has('per_page')) {
+            // Pagination
+            if (! $request->has('page') && ! $request->has('per_page')) {
                 $get_ticket = $query->orderBy('id', 'desc')->paginate(100000);
             } else {
                 $get_ticket = $query->orderBy('id', 'desc')->paginate($request->input('per_page', 10));
             }
-            // Pre-calculate aggregates for the Reports Details
+
+            // ================= REPORT CALCULATION =================
             $closedTickets = Tickets::where('status', 'Closed')->get();
-            $deptStats = [];
+
+            $deptStats     = [];
             $assigneeStats = [];
-            $globalSum = 0;
-            $globalCount = 0;
+            $globalSum     = 0;
+            $globalCount   = 0;
 
             foreach ($closedTickets as $ct) {
                 if ($ct->created_at && $ct->updated_at) {
-                    $minutes = Carbon::parse($ct->created_at)->diffInMinutes(Carbon::parse($ct->updated_at));
 
-                    if (!isset($deptStats[$ct->department_id])) {
+                    $minutes = Carbon::parse($ct->created_at)
+                        ->diffInMinutes(Carbon::parse($ct->updated_at));
+
+                    if (! isset($deptStats[$ct->department_id])) {
                         $deptStats[$ct->department_id] = ['sum' => 0, 'count' => 0];
                     }
+
                     $deptStats[$ct->department_id]['sum'] += $minutes;
                     $deptStats[$ct->department_id]['count']++;
 
                     if ($ct->assignee_id) {
-                        if (!isset($assigneeStats[$ct->assignee_id])) {
+                        if (! isset($assigneeStats[$ct->assignee_id])) {
                             $assigneeStats[$ct->assignee_id] = ['sum' => 0, 'count' => 0];
                         }
+
                         $assigneeStats[$ct->assignee_id]['sum'] += $minutes;
                         $assigneeStats[$ct->assignee_id]['count']++;
                     }
@@ -343,13 +661,20 @@ class TicketController extends BaseController
             }
 
             $globalAvgHours = $globalCount > 0 ? floor(($globalSum / $globalCount) / 60) : 0;
-            $globalAvgMins = $globalCount > 0 ? round(($globalSum / $globalCount) % 60) : 0;
-            $globalAvgFormatted = $globalAvgHours > 0 ? "{$globalAvgHours} hrs {$globalAvgMins} mins" : "{$globalAvgMins} mins";
+            $globalAvgMins  = $globalCount > 0 ? round(($globalSum / $globalCount) % 60) : 0;
 
-            $totalVolume = Tickets::count(); // Global Ticket Volume Over Time
+            $globalAvgFormatted = $globalAvgHours > 0
+                ? "{$globalAvgHours} hrs {$globalAvgMins} mins"
+                : "{$globalAvgMins} mins";
 
+            $totalVolume = Tickets::count();
+
+            // ================= TRANSFORM =================
             $baseUrl = url('public/');
+
             $get_ticket->getCollection()->transform(function ($ticket) use ($baseUrl, $deptStats, $assigneeStats, $globalAvgFormatted, $totalVolume) {
+
+                // Images
                 if ($ticket->images) {
                     $ticket->images->transform(function ($image) use ($baseUrl) {
                         $image->image_path = $baseUrl . '/' . $image->image_path;
@@ -357,32 +682,72 @@ class TicketController extends BaseController
                     });
                 }
 
-                // Add missing report details
-                $ticket->is_overdue = ($ticket->status !== 'Closed' && $ticket->expected_resolution_time !== null && Carbon::parse($ticket->expected_resolution_time)->isPast());
+                // Overdue
+                $ticket->is_overdue = (
+                    $ticket->status !== 'Closed' &&
+                    $ticket->expected_resolution_time !== null &&
+                    Carbon::parse($ticket->expected_resolution_time)->isPast()
+                );
 
-                $deptAvg = ($ticket->department_id && isset($deptStats[$ticket->department_id])) ? ($deptStats[$ticket->department_id]['sum'] / $deptStats[$ticket->department_id]['count']) : 0;
-                $ticket->avg_resolution_time_per_department = $deptAvg > 0 ? floor($deptAvg / 60) . ' hrs ' . round($deptAvg % 60) . ' mins' : 'N/A';
+                // Department avg
+                $deptAvg = ($ticket->department_id && isset($deptStats[$ticket->department_id]))
+                    ? ($deptStats[$ticket->department_id]['sum'] / $deptStats[$ticket->department_id]['count'])
+                    : 0;
 
-                $assgnAvg = ($ticket->assignee_id && isset($assigneeStats[$ticket->assignee_id])) ? ($assigneeStats[$ticket->assignee_id]['sum'] / $assigneeStats[$ticket->assignee_id]['count']) : 0;
-                $ticket->avg_resolution_time_per_assignee = $assgnAvg > 0 ? floor($assgnAvg / 60) . ' hrs ' . round($assgnAvg % 60) . ' mins' : 'N/A';
+                $ticket->avg_resolution_time_per_department = $deptAvg > 0
+                    ? floor($deptAvg / 60) . ' hrs ' . round($deptAvg % 60) . ' mins'
+                    : 'N/A';
 
+                // Assignee avg
+                $assgnAvg = ($ticket->assignee_id && isset($assigneeStats[$ticket->assignee_id]))
+                    ? ($assigneeStats[$ticket->assignee_id]['sum'] / $assigneeStats[$ticket->assignee_id]['count'])
+                    : 0;
+
+                $ticket->avg_resolution_time_per_assignee = $assgnAvg > 0
+                    ? floor($assgnAvg / 60) . ' hrs ' . round($assgnAvg % 60) . ' mins'
+                    : 'N/A';
+
+                // Global stats
                 $ticket->average_resolution_time = $globalAvgFormatted;
                 $ticket->ticket_volume_over_time = $totalVolume;
+
+                // ✅ FINAL DATE FIX (IMPORTANT)
+                $ticket->setAttribute('created_at',
+                    $ticket->created_at ? $ticket->created_at->format('Y-m-d H:i:s') : null
+                );
+
+                $ticket->setAttribute('updated_at',
+                    $ticket->updated_at ? $ticket->updated_at->format('Y-m-d H:i:s') : null
+                );
+
+                $ticket->setAttribute('expected_resolution_time',
+                    $ticket->expected_resolution_time
+                        ? Carbon::parse($ticket->expected_resolution_time)->format('Y-m-d H:i:s')
+                        : null
+                );
+
+                // Comments date formatting
+                if ($ticket->comment) {
+                    $ticket->comment->transform(function ($c) {
+                        $c->setAttribute('created_at',
+                            $c->created_at ? $c->created_at->format('Y-m-d H:i:s') : null
+                        );
+                        return $c;
+                    });
+                }
 
                 return $ticket;
             });
 
-            if (! empty($get_ticket->video)) {
-                $get_ticket->video_full_url = $baseUrl . 'uploads/tickets/' . ltrim($get_ticket->video, '/');
-            } else {
-                $get_ticket->video_full_url = null;
-            }
+            
 
+            // Empty check
             if ($get_ticket->isEmpty()) {
                 return $this->sendError('No data found.', ['error' => 'No data found'], 404);
             }
 
             return $this->sendResponse($get_ticket, 'All Ticket list');
+
         } catch (\Exception $e) {
             return $this->sendError('Something went wrong.', $e->getMessage(), 422);
         }
@@ -426,6 +791,7 @@ class TicketController extends BaseController
             } else {
                 return $this->sendError('Error.', ['error' => 'Ticket not found'], 401);
             }
+
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
         }
@@ -491,7 +857,6 @@ class TicketController extends BaseController
         $deptHeads = User::where('department_id', $ticket->department_id)
             ->where('role', 'department_head')
             ->get();
-
         $emailUsers = $emailUsers->merge($deptHeads);
 
         $emailUsers = $emailUsers->filter()->unique('id');
@@ -558,6 +923,7 @@ class TicketController extends BaseController
         $ticket->expected_resolution_time = $request->expected_resolution_time;
         $ticket->status                   = 'Assigned';
         $ticket->save();
+
         $ticket_id     = $ticket->id;
         $trigger_event = 'Ticket Assigned';
         $recipient_id  = $request->assignee_id;
@@ -572,8 +938,79 @@ class TicketController extends BaseController
         return $this->sendResponse($ticket, 'Ticket assigned successfully');
     }
 
+    // public function assignTicket(Request $request, $id)
+    // {
+    //     // Find ticket
+    //     $ticket = Tickets::find($id);
+
+    //     if (!$ticket) {
+    //         return response()->json([
+    //             'message' => 'Ticket not found',
+    //             'status' => 404,
+    //             'error' => true,
+    //         ], 404);
+    //     }
+
+    //     // Validate request
+    //     $validator = Validator::make($request->all(), [
+    //         'assignee_id' => 'required|exists:users,id',
+    //         'expected_resolution_time' => 'required|date',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'message' => $validator->errors()->first(),
+    //             'status' => 400,
+    //             'error' => true,
+    //         ], 422);
+    //     }
+
+    //     // Update ticket details
+    //     $ticket->assignee_id = $request->assignee_id;
+    //     $ticket->expected_resolution_time = $request->expected_resolution_time;
+    //     $ticket->status = 'Assigned';
+    //     $ticket->save();
+
+    //     $ticket_id = $ticket->id;
+    //     $trigger_event  = 'Ticket Assigned';
+    //     $recipient_id   = $request->assignee_id;
+    //     $title = 'Ticket Assigned';
+
+    //     // ✅ Notification to ticket submitter
+    //     $submitter_message = 'Your ticket has been assigned to our executive.';
+    //     addNotification($ticket_id, $trigger_event, $recipient_id, $ticket->submitter_id, $title, $submitter_message, 'unread');
+
+    //     // ✅ Notification to assignee
+    //     $assignee_message = 'A new ticket has been assigned to you.';
+    //     addNotification($ticket_id, $trigger_event, $recipient_id, $request->assignee_id, $title, $assignee_message, 'unread');
+
+    //     // ✅ Email sending logic
+    //     $assignee = User::find($request->assignee_id);
+    //     $submitter = User::find($ticket->submitter_id);
+
+    //     if ($assignee && $assignee->email) {
+    //         $mailData = [
+    //             'email' => $assignee->email,
+    //             'subject' => 'New Ticket Assigned - #' . $ticket->id,
+    //             'page' => 'email.ticket_assigned',
+    //             'assignee_name' => $assignee->name,
+    //             'ticket_id' => $ticket->id,
+    //             'ticket_title' => $ticket->title ?? 'N/A',
+    //             'ticket_description' => $ticket->description ?? 'No description provided',
+    //             'expected_resolution_time' => $ticket->expected_resolution_time,
+    //             'assigned_by' => $submitter->name ?? 'System',
+    //         ];
+
+    //         self::send_mail($mailData);
+    //     }
+
+    //     return $this->sendResponse($ticket, 'Ticket assigned successfully');
+    // }
+
+    // new changes on 18 12 2025
     public function assignTicket(Request $request, $id)
     {
+
         $user = Auth::guard('api')->user();
 
         $ticket = Tickets::find($id);
@@ -624,14 +1061,6 @@ class TicketController extends BaseController
         // Validate department consistency
         $assignee = User::find($request->assignee_id);
 
-        if ($assignee->department_id !== $ticket->department_id) {
-            return response()->json([
-                'message' => 'Assignee must be in the same department.',
-                'status'  => 422,
-                'error'   => true,
-            ], 422);
-        }
-
         // Update ticket details
         $ticket->assignee_id              = $request->assignee_id;
         $ticket->expected_resolution_time = $request->expected_resolution_time;
@@ -658,6 +1087,7 @@ class TicketController extends BaseController
         // ✅ Email sending logic
         $assignee  = User::find($request->assignee_id);
         $submitter = User::find($ticket->submitter_id);
+
         if ($assignee && $assignee->email) {
             $mailData = [
                 'email'                    => $assignee->email,
@@ -897,8 +1327,8 @@ class TicketController extends BaseController
 
         $overdueCount = $weeklyTickets->filter(function ($ticket) {
             return $ticket->status !== 'Closed' &&
-                $ticket->expected_resolution_time !== null &&
-                Carbon::parse($ticket->expected_resolution_time)->isPast();
+            $ticket->expected_resolution_time !== null &&
+            Carbon::parse($ticket->expected_resolution_time)->isPast();
         })->count();
 
         $resolutionTimes = $closedTickets->map(function ($ticket) {
@@ -933,6 +1363,9 @@ class TicketController extends BaseController
 
     public static function send_mail($data)
     {
+        // dd($data);
+        // dd("test 12345");
+
         Mail::send($data['page'], $data, function ($message) use ($data) {
             $message->to($data['email'])
                 ->subject($data['subject'])
@@ -949,4 +1382,5 @@ class TicketController extends BaseController
 
         return view('tickets.view', compact('ticket'));
     }
+
 }

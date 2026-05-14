@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Support System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        h1 {
+            color: #d60000;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1> Support Deployment Test Successful</h1>
+        <p>If you are seeing this page, the /support folder is working correctly.</p>
+        <p><strong>Server Time:</strong></p>
+        <p id="time"></p>
+    </div>
+
+    <script>
+        document.getElementById("time").innerHTML = new Date();
+    </script>
+</body>
+</html>

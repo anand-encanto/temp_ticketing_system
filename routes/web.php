@@ -4,13 +4,29 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\TicketController;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-// routes/web.php
 Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
     ->name('tickets.view')
     ->middleware('auth'); 
+    
+    
+Route::get('/login', function () {
+    return redirect()->away('https://ticketsystem.encantotech.in');
+})->name('login');
+
+
 
