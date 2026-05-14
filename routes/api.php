@@ -94,6 +94,7 @@ Route::middleware('AdminLogin')->group(function () {
 		Route::get('tickets/trend', [AdminTicketController::class, 'volumeTrendReport']);
 		Route::get('tickets/open', [AdminTicketController::class, 'openTickets']);
 		Route::get('tickets/closed', [AdminTicketController::class, 'closedTickets']);
+		Route::get('trends_analysis', [AdminTicketController::class, 'trendsAnalysis']);
 
 	});
 });
@@ -119,6 +120,7 @@ Route::middleware('Login')->group(function () {
 	Route::get('tickets/top-locations', [TicketSummaryController::class, 'topLocations']);
 	Route::get('tickets/open', [TicketSummaryController::class, 'openTickets']);
 	Route::get('tickets/closed', [TicketSummaryController::class, 'closedTickets']);
+	Route::get('trends_analysis', [TicketSummaryController::class, 'trendsAnalysis']);
 
 	// Comment
 	Route::post('comment/add/{ticketId}', [CommentController::class, 'addComment']);

@@ -187,6 +187,88 @@ class TicketSummaryController extends BaseController{
         return response()->json($tickets);
     }
 
+    public function trendsAnalysis(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+        
+        $query = Tickets::where('submitter_id', $user->id);
+
+        // Apply Filters
+        if ($request->has('location_id')) {
+            $query->where('location_id', $request->location_id);
+        }
+        if ($request->has('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->has('priority')) {
+            $query->where('priority', $request->priority);
+        }
+        if ($request->has('is_overdue')) {
+            $query->where('is_overdue', $request->is_overdue);
+        }
+
+        // Date Range Filter
+        $startDate = $request->input('start_date', Carbon::now()->subDays(30)->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        
+        $query->whereBetween('created_at', [
+            Carbon::parse($startDate)->startOfDay(), 
+            Carbon::parse($endDate)->endOfDay()
+        ]);
+
+        // 1. Volume over time (Daily)
+        $volumeOverTime = (clone $query)
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as total'))
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->get();
+
+        // 2. Status Distribution
+        $statusDistribution = (clone $query)
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get();
+
+        // 3. Department Distribution
+        $deptDistribution = (clone $query)
+            ->select('department_id', DB::raw('count(*) as total'))
+            ->with('department:id,name')
+            ->groupBy('department_id')
+            ->get();
+
+        // 4. SLA/Overdue Stats
+        $overdueStats = (clone $query)
+            ->select('is_overdue', DB::raw('count(*) as total'))
+            ->groupBy('is_overdue')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'label' => $item->is_overdue ? 'Overdue' : 'On Time',
+                    'total' => $item->total
+                ];
+            });
+
+        return response()->json([
+            'filters_applied' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'location_id' => $request->location_id,
+                'department_id' => $request->department_id,
+                'status' => $request->status,
+                'priority' => $request->priority,
+            ],
+            'trends' => [
+                'volume_over_time' => $volumeOverTime,
+                'status_distribution' => $statusDistribution,
+                'department_distribution' => $deptDistribution,
+                'sla_compliance' => $overdueStats
+            ]
+        ]);
+    }
+
 
 }   
 
