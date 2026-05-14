@@ -56,8 +56,8 @@ class LoginController extends BaseController
         $trigger_event  = 'New User';
         $recipient_id   = null;
         $title          = 'New user registration';
-        $message        = 'New user, '.$request->name.' has been register on panel';
-        $result_add     = addNotification($ticket_id,$trigger_event,$recipient_id,'1',$title,$message,'unread'); 
+        $message        = 'New user, ' . $request->name . ' has been register on panel';
+        $result_add     = addNotification($ticket_id, $trigger_event, $recipient_id, '1', $title, $message, 'unread');
 
         return response()->json([
             'status'  => 200,
@@ -69,7 +69,7 @@ class LoginController extends BaseController
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string',
+            'email_or_username' => 'required|string',
             'password' => 'required|string',
         ]);
 
@@ -77,9 +77,9 @@ class LoginController extends BaseController
             return $this->sendError('Validation Error.', $validator->errors(), 422);
         }
 
-        $login_type = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $login_type = filter_var($request->email_or_username, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        if (Auth::attempt([$login_type => $request->email, 'password' => $request->password])) {
+        if (Auth::attempt([$login_type => $request->email_or_username, 'password' => $request->password])) {
             $user = Auth::user();
             $token = $user->createToken('MyApp')->accessToken;
 
@@ -173,6 +173,4 @@ class LoginController extends BaseController
             ], 422);
         }
     }
-
 }
-
