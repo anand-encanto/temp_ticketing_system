@@ -26,7 +26,7 @@ Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
     
 Route::get('/login', function () {
     return redirect()->away('https://ticketsystem.encantotech.in');
-})->name('login');
+})->name('login.redirect');
 
 
 

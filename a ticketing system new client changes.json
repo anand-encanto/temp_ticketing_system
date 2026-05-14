@@ -1,0 +1,1478 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+		"name": "b a ticketing system new client changes",
+		"description": "Collection for testing all related APIs for the Ticketing System including SLA Engine, Reports, and Admin changes.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"username\": \"johndoe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"location_id\": 1,\n    \"department_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/forgot_password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"forgot_password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john@example.com\",\n    \"otp\": \"123456\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/reset_password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reset_password"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Management",
+			"item": [
+				{
+					"name": "User Management",
+					"item": [
+						{
+							"name": "Add User",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Jane Admin\",\n    \"username\": \"janeadmin\",\n    \"email\": \"jane@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"admin\",\n    \"location_id\": 1,\n    \"department_id\": 1,\n    \"outlet_phone\": \"123456789\",\n    \"outlet_email\": \"outlet@example.com\",\n    \"mobile\": \"987654321\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/user/add",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"user",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "List Users",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/user/list?paginate=true&page=1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"user",
+										"list"
+									],
+									"query": [
+										{
+											"key": "paginate",
+											"value": "true"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "User Details",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/user/details/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"user",
+										"details",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit User",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Jane Updated\",\n    \"role\": \"super_admin\",\n    \"is_active\": 0\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/user/edit/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"user",
+										"edit",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/user/delete/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"user",
+										"delete",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "SLA Settings",
+					"item": [
+						{
+							"name": "Update SLA Settings",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"priority\": \"Urgent\",\n    \"resolution_time_minutes\": 60\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/sla-settings/update",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"sla-settings",
+										"update"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Ticket Management (Admin)",
+					"item": [
+						{
+							"name": "All Tickets",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/ticket/list",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"ticket",
+										"list"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Ticket Details (Admin)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/ticket/details/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"ticket",
+										"details",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Reports & Analytics (Admin)",
+					"item": [
+						{
+							"name": "Weekly Summary",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/weekly_summary",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"weekly_summary"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "KPI Report",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/tickets/kpi",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"tickets",
+										"kpi"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "SLA Breach Report",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/tickets/sla-breaches",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"tickets",
+										"sla-breaches"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Volume Trend Report",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/tickets/trend",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"tickets",
+										"trend"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Urgent Tickets",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/tickets/urgent",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"tickets",
+										"urgent"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Resolution Times",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/tickets/resolution-times",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"tickets",
+										"resolution-times"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Standard User Operations",
+			"item": [
+				{
+					"name": "Profile",
+					"item": [
+						{
+							"name": "Get Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/user/profile",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Profile",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"John Doe Updated\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user/update_profile",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"update_profile"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Ticket Management",
+					"item": [
+						{
+							"name": "Create Ticket",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"title\": \"Sample Ticket\",\n    \"description\": \"Description of the issue\",\n    \"priority\": \"High\",\n    \"department_id\": 1,\n    \"location_id\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/ticket/create",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "My Tickets",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/ticket/my",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"my"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Ticket Details",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/ticket/details/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"details",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Ticket History",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/ticket/history/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"history",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Reports & Analytics (User)",
+					"item": [
+						{
+							"name": "Weekly Summary",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/weekly_summary",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"weekly_summary"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Urgent Tickets",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tickets/urgent",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tickets",
+										"urgent"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Resolution Times",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tickets/resolution-times",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tickets",
+										"resolution-times"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Top Locations",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{auth_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tickets/top-locations",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tickets",
+										"top-locations"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Add Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comment\": \"This is a sample comment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/comment/add/:ticketId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"comment",
+								"add",
+								":ticketId"
+							],
+							"variable": [
+								{
+									"key": "ticketId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "My Notifications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/notification/my",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notification",
+								"my"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Notification",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"read\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/notification/update/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notification",
+								"update",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Executive Actions",
+			"item": [
+				{
+					"name": "List All Executives",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/get_all_executive",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"get_all_executive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Ticket",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assignee_id\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/ticket/assign_ticket/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ticket",
+								"assign_ticket",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Assigned List",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ticket/assigned_list",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ticket",
+								"assigned_list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Ticket",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ticket/accept/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ticket",
+								"accept",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Closed\",\n    \"comment\": \"Issue resolved successfully\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/ticket/update_status/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ticket",
+								"update_status",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Executive Weekly Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/executive/weekly_summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"executive",
+								"weekly_summary"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Master Data",
+			"item": [
+				{
+					"name": "Locations",
+					"item": [
+						{
+							"name": "List Locations",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/location/list",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"location",
+										"list"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Location",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Outlet\",\n    \"code\": \"OUT123\",\n    \"address\": \"123 Street\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/location/add",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"location",
+										"add"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Departments",
+					"item": [
+						{
+							"name": "List Departments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/department/list",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"department",
+										"list"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Geography",
+					"item": [
+						{
+							"name": "Get Countries",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/get_countries",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"get_countries"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get States",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/get_states/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"get_states",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Maintenance & System",
+			"item": [
+				{
+					"name": "Check SLA Breaches",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/maintenance/check-sla",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"maintenance",
+								"check-sla"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test API Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/test-api",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"test-api"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "YOUR_BEARER_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

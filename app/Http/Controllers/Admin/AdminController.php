@@ -25,9 +25,13 @@ class AdminController extends BaseController{
             'username'         => 'required|unique:users,username',
             'email'            => 'required|email|unique:users,email',
             'password'         => 'required|string|min:6',
-            'role'             => 'required|in:standard,department_head,admin,executive',
+            'role'             => 'required|in:standard,department_head,admin,executive,super_admin',
             'location_id'      => 'required|exists:locations,id',
             'department_id'    => 'nullable|exists:departments,id',
+            'is_active'        => 'nullable|boolean',
+            'outlet_phone'     => 'nullable|string',
+            'outlet_email'     => 'nullable|email',
+            'mobile'           => 'nullable|string',
         ]);
     
         if ($validator->fails()) {
@@ -48,6 +52,10 @@ class AdminController extends BaseController{
         $model->role            = $request->role;
         $model->location_id     = $request->location_id;
         $model->department_id   = $request->department_id;
+        $model->is_active       = $request->is_active ?? 1;
+        $model->outlet_phone    = $request->outlet_phone;
+        $model->outlet_email    = $request->outlet_email;
+        $model->mobile          = $request->mobile;
         $model->save();
         
 
@@ -132,9 +140,13 @@ class AdminController extends BaseController{
 
         $validator = Validator::make($request->all(), [
             'name'             => 'sometimes|required|string|max:255',
-            'role'             => 'sometimes|required|in:standard,department_head,admin,executive',
+            'role'             => 'sometimes|required|in:standard,department_head,admin,executive,super_admin',
             'location_id'      => 'sometimes|required|exists:locations,id',
             'department_id'    => 'nullable|exists:departments,id',
+            'is_active'        => 'nullable|boolean',
+            'outlet_phone'     => 'nullable|string',
+            'outlet_email'     => 'nullable|email',
+            'mobile'           => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -151,7 +163,11 @@ class AdminController extends BaseController{
         if ($request->has('username')) $user->username = $request->username;
         if ($request->has('location_id')) $user->location_id = $request->location_id;
         if ($request->has('department_id')) $user->department_id = $request->department_id;
-
+        if ($request->has('is_active')) $user->is_active = $request->is_active;
+        if ($request->has('outlet_phone')) $user->outlet_phone = $request->outlet_phone;
+        if ($request->has('outlet_email')) $user->outlet_email = $request->outlet_email;
+        if ($request->has('mobile')) $user->mobile = $request->mobile;
+        
         $user->save();
 
         return $this->sendResponse($user, 'User updated successfully.');
@@ -174,5 +190,34 @@ class AdminController extends BaseController{
         }    
     }
 
+    /**
+     * Req 12: Dynamic SLA Modification (Super Admin Only)
+     */
+    public function updateSlaSettings(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            'priority'                  => 'required|in:Low,Medium,High,Urgent',
+            'resolution_time_minutes'   => 'sometimes|required|integer|min:1',
+            'reminder_interval_minutes' => 'sometimes|required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors());
+        }
+
+        $sla = \App\Models\SlaLevel::where('priority', $request->priority)->first();
+        if ($sla) {
+            if ($request->has('resolution_time_minutes')) {
+                $sla->resolution_time_minutes = $request->resolution_time_minutes;
+            }
+            if ($request->has('reminder_interval_minutes')) {
+                $sla->reminder_interval_minutes = $request->reminder_interval_minutes;
+            }
+            $sla->save();
+            return $this->sendResponse($sla, "SLA settings for {$request->priority} updated successfully.");
+        }
+
+        return $this->sendError('SLA not found.');
+    }
 }
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\TicketSummaryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\MaintenanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,9 @@ use App\Http\Controllers\Api\ReportController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// SLA Maintenance (Triggered by External Cron)
+Route::get('maintenance/check-sla', [MaintenanceController::class, 'checkSlaBreaches']);
 
 
 Route::get('test-api', function () {
@@ -74,6 +78,7 @@ Route::middleware('AdminLogin')->group(function () {
 		Route::post('user/edit/{id}', [AdminController::class, 'editUser']);
 		Route::get('user/details/{id}', [AdminController::class, 'userDetails']);
 		Route::get('user/delete/{id}', [AdminController::class, 'userDelete']);
+		Route::post('sla-settings/update', [AdminController::class, 'updateSlaSettings']);
 
 		// Ticket Management
 		Route::get('ticket/list', [TicketController::class, 'getAllTickets']);
@@ -84,6 +89,9 @@ Route::middleware('AdminLogin')->group(function () {
 		Route::get('tickets/urgent', [AdminTicketController::class, 'urgentTickets']);
 		Route::get('tickets/resolution-times', [AdminTicketController::class, 'resolutionTimes']);
 		Route::get('tickets/top-locations', [AdminTicketController::class, 'topLocations']);
+		Route::get('tickets/kpi', [AdminTicketController::class, 'kpiReport']);
+		Route::get('tickets/sla-breaches', [AdminTicketController::class, 'slaBreachReport']);
+		Route::get('tickets/trend', [AdminTicketController::class, 'volumeTrendReport']);
 		Route::get('tickets/open', [AdminTicketController::class, 'openTickets']);
 		Route::get('tickets/closed', [AdminTicketController::class, 'closedTickets']);
 
@@ -102,6 +110,7 @@ Route::middleware('Login')->group(function () {
 	Route::post('ticket/update/{id}', [TicketController::class, 'updateTicket']);
 	Route::get('ticket/my', [TicketController::class, 'getMyTickets']);
 	Route::get('ticket/details/{id}', [TicketController::class, 'ticketDetails']);
+	Route::get('ticket/history/{id}', [TicketController::class, 'getTicketHistory']);
 
 	// Summary
 	Route::get('weekly_summary', [TicketSummaryController::class, 'weeklySummary']);

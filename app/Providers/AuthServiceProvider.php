@@ -26,7 +26,7 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         ResetPassword::createUrlUsing(function ($user, string $token) {
-            return 'https://ticketsystem.encantotech.in/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+            return 'https://support.mcdonalds.mu/#/reset-password?token=' . $token . '&email=' . urlencode($user->email);
         });
     }
 }

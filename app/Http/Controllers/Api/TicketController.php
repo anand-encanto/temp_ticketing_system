@@ -117,6 +117,8 @@ class TicketController extends BaseController
             'location_id'              => 'required|exists:locations,id',
             'priority'                 => 'required|in:Low,Medium,High,Urgent',
             'issue'                    => 'required|string',
+            'contact_person'           => 'nullable|string|max:255',
+            'contact_number'           => 'nullable|string|max:20',
             'assignee_id'              => 'nullable|exists:users,id',
             'expected_resolution_time' => 'nullable|date',
             'secondary_contact_id'     => 'nullable|exists:users,id',
@@ -157,6 +159,16 @@ class TicketController extends BaseController
         }
 
         $model->save();
+
+        // LOG HISTORY: Ticket Created
+        logTicketHistory($model->id, $user->id, [
+            'status_to'   => 'New',
+            'change_type' => 'creation',
+            'message'     => 'Ticket created by ' . $user->name
+        ]);
+
+        // SLA: Calculate and set Due Date
+        calculateTicketDueDate($model->id);
 
         // IMAGE upload
         if ($request->hasFile('images')) {
@@ -825,12 +837,26 @@ class TicketController extends BaseController
             ], 422);
         }
 
+        $oldStatus = $ticket->status;
+        $oldPriority = $ticket->priority;
+
         // Update Ticket
         $ticket->title         = $request->title ?? $ticket->title;
         $ticket->description   = $request->description ?? $ticket->description;
         $ticket->status        = $request->status ?? $ticket->status;
         $ticket->department_id = $request->department_id ?? $ticket->department_id;
         $ticket->save();
+
+        // LOG HISTORY: General Update
+        if ($oldStatus != $ticket->status || $oldPriority != $ticket->priority) {
+            logTicketHistory($ticket->id, $user->id, [
+                'status_from'   => $oldStatus,
+                'status_to'     => $ticket->status,
+                'priority_from' => $oldPriority,
+                'priority_to'   => $ticket->priority,
+                'message'       => 'Ticket details updated by ' . $user->name
+            ]);
+        }
 
         // SAVE IMAGES
         if ($request->hasFile('images')) {
@@ -1061,11 +1087,31 @@ class TicketController extends BaseController
         // Validate department consistency
         $assignee = User::find($request->assignee_id);
 
+        // Capture old values for history
+        $oldAssignee = $ticket->assignee_id;
+        $oldStatus   = $ticket->status;
+
         // Update ticket details
         $ticket->assignee_id              = $request->assignee_id;
         $ticket->expected_resolution_time = $request->expected_resolution_time;
         $ticket->status                   = 'Assigned';
+        
+        // KPI: Set assigned_at if this is the first assignment
+        if (!$ticket->assigned_at) {
+            $ticket->assigned_at = now();
+        }
+        
         $ticket->save();
+
+        // LOG HISTORY: Assignment
+        logTicketHistory($ticket->id, $user->id, [
+            'assignment_from' => $oldAssignee,
+            'assignment_to'   => $request->assignee_id,
+            'status_from'     => $oldStatus,
+            'status_to'       => 'Assigned',
+            'change_type'     => $isReassign ? 'reassignment' : 'assignment',
+            'message'         => $isReassign ? 'Ticket reassigned by ' . $user->name : 'Ticket assigned by ' . $user->name
+        ]);
 
         $ticket_id     = $ticket->id;
         $trigger_event = $isReassign ? 'Ticket Assigned' : 'Ticket Assigned';
@@ -1205,9 +1251,18 @@ class TicketController extends BaseController
             ], 422);
         }
 
+        $oldStatus = $ticket->status;
+
         // Update status
         $ticket->status = $request->status;
         $ticket->save();
+
+        // LOG HISTORY: Accepted
+        logTicketHistory($ticket->id, $user->id, [
+            'status_from' => $oldStatus,
+            'status_to'   => $request->status,
+            'message'     => 'Ticket accepted and moved to In Progress by ' . $user->name
+        ]);
 
         $emailUsers = collect([]);
 
@@ -1261,7 +1316,7 @@ class TicketController extends BaseController
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:Pending Confirmation,Resolved,Closed',
+            'status' => 'required|in:Pending Confirmation,Resolved,Closed,Waiting for Parts',
         ]);
 
         if ($validator->fails()) {
@@ -1273,9 +1328,25 @@ class TicketController extends BaseController
         }
 
         $oldStatus = $ticket->status;
+        $newStatus = $request->status;
 
-        $ticket->status = $request->status;
+        $ticket->status = $newStatus;
+
+        // KPI: Update timestamps based on status
+        if ($newStatus == 'Resolved') {
+            $ticket->resolved_at = now();
+        } elseif ($newStatus == 'Closed') {
+            $ticket->closed_at = now();
+        }
+
         $ticket->save();
+
+        // LOG HISTORY: Status Change
+        logTicketHistory($ticket->id, Auth::guard('api')->id(), [
+            'status_from' => $oldStatus,
+            'status_to'   => $newStatus,
+            'message'     => 'Status updated to ' . $newStatus
+        ]);
 
         $ticket_id     = $ticket->id;
         $trigger_event = 'Status Updated';
@@ -1381,6 +1452,24 @@ class TicketController extends BaseController
         // abort(403) if user cannot view this ticket
 
         return view('tickets.view', compact('ticket'));
+    }
+
+    public function getTicketHistory(Request $request, $id)
+    {
+        try {
+            $history = \App\Models\TicketHistory::with(['user:id,name', 'from_assignee:id,name', 'to_assignee:id,name'])
+                ->where('ticket_id', $id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            if ($history->isEmpty()) {
+                return $this->sendResponse([], 'No history found for this ticket.');
+            }
+
+            return $this->sendResponse($history, 'Ticket history retrieved successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong.', $e->getMessage(), 422);
+        }
     }
 
 }

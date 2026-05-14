@@ -28,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
     ];
 
     /**
@@ -55,6 +56,11 @@ class User extends Authenticatable
         $sent = Mail::send($data['page'], $data, function ($message) use ($data) {
             $message->to($data['email'])->subject($data['subject'])->from('admin@example.com');
         });
+    }
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
     }
 
     public function department()

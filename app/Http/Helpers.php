@@ -43,4 +43,42 @@ if (!function_exists('getProfileImageUrl')) {
         return url('public/profiles/' . $path);
     }
 }
+if (!function_exists('logTicketHistory')) {
+    function logTicketHistory($ticketId, $userId, $data = [])
+    {
+        return \App\Models\TicketHistory::create([
+            'ticket_id'       => $ticketId,
+            'user_id'         => $userId,
+            'status_from'     => $data['status_from'] ?? null,
+            'status_to'       => $data['status_to'] ?? null,
+            'assignment_from' => $data['assignment_from'] ?? null,
+            'assignment_to'   => $data['assignment_to'] ?? null,
+            'priority_from'   => $data['priority_from'] ?? null,
+            'priority_to'     => $data['priority_to'] ?? null,
+            'change_type'     => $data['change_type'] ?? 'status_change',
+            'message'         => $data['message'] ?? null,
+        ]);
+    }
+}
+
+/**
+ * Calculate and set the due_at timestamp for a ticket based on its priority SLA
+ */
+if (!function_exists('calculateTicketDueDate')) {
+    function calculateTicketDueDate($ticketId) {
+        $ticket = \App\Models\Tickets::find($ticketId);
+        if (!$ticket) return null;
+
+        $sla = \App\Models\SlaLevel::where('priority', $ticket->priority)->first();
+        if (!$sla) return null;
+
+        // Calculate resolution deadline (resolution_time_minutes)
+        $dueAt = \Illuminate\Support\Carbon::parse($ticket->created_at)->addMinutes($sla->resolution_time_minutes);
+        
+        $ticket->due_at = $dueAt;
+        $ticket->save();
+
+        return $dueAt;
+    }
+}
 ?>

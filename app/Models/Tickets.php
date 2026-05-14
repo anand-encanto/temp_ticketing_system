@@ -9,7 +9,14 @@ class Tickets extends Model
 {
     use HasFactory;
     
-    protected $table = "tickets"; // Corrected property
+    protected $table = "tickets";
+    
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'resolved_at' => 'datetime',
+        'closed_at'   => 'datetime',
+        'due_at'      => 'datetime',
+    ];
 
 
     public function department()
@@ -41,6 +48,11 @@ class Tickets extends Model
     public function comment()
     {
         return $this->hasMany(Comment::class, 'ticket_id', 'id');
+    }
+
+    public function history()
+    {
+        return $this->hasMany(TicketHistory::class, 'ticket_id', 'id');
     }
 
     protected function serializeDate(\DateTimeInterface $date)

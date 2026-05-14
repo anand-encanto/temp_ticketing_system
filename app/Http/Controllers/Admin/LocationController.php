@@ -84,6 +84,8 @@ class LocationController extends BaseController{
         $model->name     = $request->name;
         $model->code     = $request->code;
         $model->address  = $request->address;
+        $model->phone    = $request->phone;
+        $model->email    = $request->email;
         $model->save();
 
         return $this->sendResponse($model, 'Locations Added Successfully');
@@ -116,6 +118,8 @@ class LocationController extends BaseController{
         $location->name    = $request->name;
         $location->code    = $request->code;
         $location->address = $request->address ?? $location->address;
+        $location->phone   = $request->phone ?? $location->phone;
+        $location->email   = $request->email ?? $location->email;
         $location->save();
 
         return $this->sendResponse($location, 'Location updated successfully');

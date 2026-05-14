@@ -20,6 +20,15 @@ class LoginCheck
                 ], 401);
             }
 
+            $user = Auth::guard('api')->user();
+            if ($user && !$user->is_active) {
+                return response()->json([
+                    'status' => 403,
+                    'success' => false,
+                    'message' => 'Your account has been disabled. Please contact support.',
+                ], 403);
+            }
+
             return $next($request);
 
         } catch (UnauthorizedHttpException $e) {

@@ -300,5 +300,93 @@ class AdminTicketController extends BaseController{
     }
 
 
-}   
+    /**
+     * KPI: Technician and Department Performance Report
+     */
+    public function kpiReport(Request $request)
+    {
+        $closedTickets = Tickets::where('status', 'Closed')
+            ->whereNotNull('assigned_at')
+            ->whereNotNull('closed_at')
+            ->get();
+
+        $technicianStats = [];
+        $departmentStats = [];
+
+        foreach ($closedTickets as $ticket) {
+            $duration = $ticket->assigned_at->diffInMinutes($ticket->closed_at);
+
+            // Tech stats
+            if ($ticket->assignee_id) {
+                if (!isset($technicianStats[$ticket->assignee_id])) {
+                    $technicianStats[$ticket->assignee_id] = ['name' => $ticket->assign_to->name ?? 'Unknown', 'total_minutes' => 0, 'count' => 0];
+                }
+                $technicianStats[$ticket->assignee_id]['total_minutes'] += $duration;
+                $technicianStats[$ticket->assignee_id]['count']++;
+            }
+
+            // Dept stats
+            if (!isset($departmentStats[$ticket->department_id])) {
+                $departmentStats[$ticket->department_id] = ['name' => $ticket->department->name ?? 'Unknown', 'total_minutes' => 0, 'count' => 0];
+            }
+            $departmentStats[$ticket->department_id]['total_minutes'] += $duration;
+            $departmentStats[$ticket->department_id]['count']++;
+        }
+
+        // Format for response
+        $techFormatted = collect($technicianStats)->map(function($stat) {
+            $avg = $stat['count'] > 0 ? round($stat['total_minutes'] / $stat['count']) : 0;
+            return [
+                'technician' => $stat['name'],
+                'tickets_resolved' => $stat['count'],
+                'avg_resolution_minutes' => $avg,
+                'avg_resolution_human' => floor($avg / 60) . 'h ' . ($avg % 60) . 'm'
+            ];
+        })->values();
+
+        return response()->json([
+            'technicians' => $techFormatted,
+            'departments' => collect($departmentStats)->map(function($stat) {
+                $avg = $stat['count'] > 0 ? round($stat['total_minutes'] / $stat['count']) : 0;
+                return [
+                    'department' => $stat['name'],
+                    'avg_resolution_minutes' => $avg
+                ];
+            })->values()
+        ]);
+    }
+
+    /**
+     * SLA Breach Report: List all overdue tickets
+     */
+    public function slaBreachReport(Request $request)
+    {
+        $overdue = Tickets::with(['department:id,name', 'location:id,name', 'assign_to:id,name'])
+            ->where('is_overdue', 1)
+            ->orderBy('due_at', 'asc')
+            ->paginate(20);
+
+        return response()->json($overdue);
+    }
+
+    /**
+     * Trend Analysis: Ticket volume over last 6 months
+     */
+    public function volumeTrendReport(Request $request)
+    {
+        $sixMonthsAgo = Carbon::now()->subMonths(6)->startOfMonth();
+        
+        $trends = Tickets::select(
+                DB::raw('count(id) as total'), 
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month")
+            )
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->groupBy('month')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        return response()->json($trends);
+    }
+
+}
 

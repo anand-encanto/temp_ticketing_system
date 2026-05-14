@@ -18,18 +18,7 @@ class ExecutiveLoginCheck
      */
     public function handle(Request $request, Closure $next)
     {
-        $token = $request->header('Authorization');
-
-        if (!$token) {
-            return response()->json([
-                'status' => 401,
-                'success' => false,
-                'message' => 'Unauthorized: Token is missing.',
-            ], Response::HTTP_UNAUTHORIZED); // 401
-        }
-
         try {
-            // This assumes you're using Laravel Passport or Sanctum
             $user = Auth::guard('api')->user();
 
             if (!$user) {
@@ -40,7 +29,15 @@ class ExecutiveLoginCheck
                 ], Response::HTTP_UNAUTHORIZED); // 401
             }
 
-            if ($user->role !== 'executive') {
+            if (!$user->is_active) {
+                return response()->json([
+                    'status' => 403,
+                    'success' => false,
+                    'message' => 'Your account has been disabled. Please contact support.',
+                ], Response::HTTP_FORBIDDEN); // 403
+            }
+
+            if ($user->role !== 'executive' && $user->role !== 'super_admin') {
                 return response()->json([
                     'status' => 403,
                     'success' => false,
