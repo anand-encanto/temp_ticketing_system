@@ -16,8 +16,9 @@ use App\Models\User;
 use App\Models\Tickets;
 use App\Models\Locations;
 
-class TicketSummaryController extends BaseController{
-    
+class TicketSummaryController extends BaseController
+{
+
     public function weeklySummary(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -25,7 +26,7 @@ class TicketSummaryController extends BaseController{
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
 
-        $weeklyTickets = Tickets::whereBetween('created_at', [$startOfWeek, $endOfWeek])->where(['submitter_id'=>$user->id])->get();
+        $weeklyTickets = Tickets::whereBetween('created_at', [$startOfWeek, $endOfWeek])->where(['submitter_id' => $user->id])->get();
 
         $openStatuses = ['New', 'Assigned', 'In Progress'];
 
@@ -35,8 +36,8 @@ class TicketSummaryController extends BaseController{
 
         $overdueCount = $weeklyTickets->filter(function ($ticket) {
             return $ticket->status !== 'Closed' &&
-                   $ticket->expected_resolution_time !== null &&
-                   Carbon::parse($ticket->expected_resolution_time)->isPast();
+                $ticket->expected_resolution_time !== null &&
+                Carbon::parse($ticket->expected_resolution_time)->isPast();
         })->count();
 
         $resolutionTimes = $closedTickets->map(function ($ticket) {
@@ -74,12 +75,12 @@ class TicketSummaryController extends BaseController{
         $user = Auth::guard('api')->user();
 
         $tickets = Tickets::with([
-                'department:id,name',
-                'location:id,name',
-                'submit_by:id,name',
-                'assign_to:id,name',
-            ])
-        ->where('priority', 'Urgent')->where(['submitter_id'=>$user->id])->paginate(10);
+            'department:id,name',
+            'location:id,name',
+            'submit_by:id,name',
+            'assign_to:id,name',
+        ])
+            ->where('priority', 'Urgent')->where(['submitter_id' => $user->id])->paginate(10);
         return response()->json($tickets);
     }
 
@@ -88,13 +89,13 @@ class TicketSummaryController extends BaseController{
         $user = Auth::guard('api')->user();
 
         $tickets = Tickets::with([
-                'department:id,name',
-                'location:id,name',
-                'submit_by:id,name',
-                'assign_to:id,name',
-            ])
+            'department:id,name',
+            'location:id,name',
+            'submit_by:id,name',
+            'assign_to:id,name',
+        ])
             ->where('status', 'Closed')
-            ->where(['submitter_id'=>$user->id])
+            ->where(['submitter_id' => $user->id])
             ->paginate(10);
 
         $tickets->getCollection()->transform(function ($ticket) {
@@ -115,7 +116,7 @@ class TicketSummaryController extends BaseController{
         // Step 1: Get top location IDs by ticket count
         $topLocations = Tickets::select('location_id', DB::raw('COUNT(*) as total'))
             ->groupBy('location_id')
-            ->where(['submitter_id'=>$user->id])
+            ->where(['submitter_id' => $user->id])
             ->orderByDesc('total')
             ->pluck('location_id');
 
@@ -130,13 +131,13 @@ class TicketSummaryController extends BaseController{
             if (!$location) continue;
 
             $tickets = Tickets::with([
-                    'department:id,name',
-                    'location:id,name',
-                    'submit_by:id,name',
-                    'assign_to:id,name',
-                ])
+                'department:id,name',
+                'location:id,name',
+                'submit_by:id,name',
+                'assign_to:id,name',
+            ])
                 ->where('location_id', $locationId)
-                ->where(['submitter_id'=>$user->id])
+                ->where(['submitter_id' => $user->id])
                 ->orderByDesc('created_at')
                 ->take(5) // Show top 5 latest tickets per location
                 ->get();
@@ -164,11 +165,11 @@ class TicketSummaryController extends BaseController{
         $openStatuses = ['New', 'Assigned', 'In Progress'];
 
         $tickets = Tickets::with([
-                'department:id,name',
-                'location:id,name',
-                'submit_by:id,name',
-                'assign_to:id,name',
-            ])->whereIn('status', $openStatuses)->where(['submitter_id'=>$user->id])->paginate(10);
+            'department:id,name',
+            'location:id,name',
+            'submit_by:id,name',
+            'assign_to:id,name',
+        ])->whereIn('status', $openStatuses)->where(['submitter_id' => $user->id])->paginate(10);
 
         return response()->json($tickets);
     }
@@ -178,11 +179,11 @@ class TicketSummaryController extends BaseController{
         $user = Auth::guard('api')->user();
 
         $tickets = Tickets::with([
-                'department:id,name',
-                'location:id,name',
-                'submit_by:id,name',
-                'assign_to:id,name',
-            ])->where('status', 'Closed')->where(['submitter_id'=>$user->id])->paginate(10);
+            'department:id,name',
+            'location:id,name',
+            'submit_by:id,name',
+            'assign_to:id,name',
+        ])->where('status', 'Closed')->where(['submitter_id' => $user->id])->paginate(10);
 
         return response()->json($tickets);
     }
@@ -190,7 +191,7 @@ class TicketSummaryController extends BaseController{
     public function trendsAnalysis(Request $request)
     {
         $user = Auth::guard('api')->user();
-        
+
         $query = Tickets::where('submitter_id', $user->id);
 
         // Apply Filters
@@ -213,9 +214,9 @@ class TicketSummaryController extends BaseController{
         // Date Range Filter
         $startDate = $request->input('start_date', Carbon::now()->subDays(30)->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
-        
+
         $query->whereBetween('created_at', [
-            Carbon::parse($startDate)->startOfDay(), 
+            Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay()
         ]);
 
@@ -244,7 +245,7 @@ class TicketSummaryController extends BaseController{
             ->select('is_overdue', DB::raw('count(*) as total'))
             ->groupBy('is_overdue')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'label' => $item->is_overdue ? 'Overdue' : 'On Time',
                     'total' => $item->total
@@ -268,7 +269,4 @@ class TicketSummaryController extends BaseController{
             ]
         ]);
     }
-
-
-}   
-
+}

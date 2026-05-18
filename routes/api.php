@@ -32,14 +32,49 @@ Route::get('maintenance/check-sla', [MaintenanceController::class, 'checkSlaBrea
 
 
 Route::get('test-api', function () {
-    return response()->json([
-        'status' => true,
-        'message' => 'API is working successfully on McDonalds server',
-        'server' => request()->getHost(),
-        'time' => now()
-    ]);
+	return response()->json([
+		'status' => true,
+		'message' => 'API is working successfully on McDonalds server',
+		'server' => request()->getHost(),
+		'time' => now()
+	]);
 });
 
+Route::get('test-email', function (\Illuminate\Http\Request $request) {
+    $to = $request->input('to', 'encantodeveloper@gmail.com');
+
+    // Set the mail configuration dynamically for this test
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.transport', 'smtp');
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.host', 'smtp.gmail.com');
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.port', 587);
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.encryption', 'tls');
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.username', 'encantodeveloper@gmail.com');
+    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.password', 'zsrylkrtypkokyik');
+    \Illuminate\Support\Facades\Config::set('mail.from.address', 'encantodeveloper@gmail.com');
+    \Illuminate\Support\Facades\Config::set('mail.from.name', "McDonald's Support");
+
+    try {
+        \Illuminate\Support\Facades\Mail::raw("This is a test email to verify SMTP credentials.\n\n" . 
+                    "Host: smtp.gmail.com\n" . 
+                    "Port: 587\n" . 
+                    "Username: encantodeveloper@gmail.com", function ($message) use ($to) {
+            $message->to($to)
+                    ->subject('SMTP Credentials Verification - Ticketing System via API');
+        });
+        
+        return response()->json([
+            'status' => true,
+            'message' => 'Email sent successfully! Please check your inbox (and spam/junk folder).',
+            'to' => $to
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to send email. There seems to be an issue with the SMTP credentials or network connection.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 
 
 // Location Routes
@@ -74,7 +109,6 @@ Route::post('reset_password', [LoginController::class, 'reset_password']);
 // Admin
 Route::middleware('AdminLogin')->group(function () {
 	Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
-
 		// User Management
 		Route::post('user/add', [AdminController::class, 'addUser']);
 		Route::get('user/list', [AdminController::class, 'getAllUsers']);
@@ -100,7 +134,6 @@ Route::middleware('AdminLogin')->group(function () {
 		Route::get('tickets/open', [AdminTicketController::class, 'openTickets']);
 		Route::get('tickets/closed', [AdminTicketController::class, 'closedTickets']);
 		Route::get('trends_analysis', [AdminTicketController::class, 'trendsAnalysis']);
-
 	});
 });
 
@@ -145,13 +178,10 @@ Route::middleware('Login')->group(function () {
 });
 
 // Department
-Route::middleware('DepartmentLogin')->group(function () {
-});
+Route::middleware('DepartmentLogin')->group(function () {});
 
 // Executive
-Route::middleware('ExecutiveLogin')->group(function () {
-
-});
+Route::middleware('ExecutiveLogin')->group(function () {});
 
 Route::get('get_countries', [HomeController::class, 'get_countries'])->name('get_countries');
 Route::get('get_states/{id}', [HomeController::class, 'get_states'])->name('get_states');

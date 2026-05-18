@@ -170,11 +170,7 @@
 
         @php
 
-            // $ticketUrl = config('app.frontend_url') . '/tickets/' . $ticket_id;
-
-            //  $ticketUrl = rtrim(config('app.url'), '/') . '/tickets/' . $ticket_id;
-
-            $ticketUrl = rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/tickets/' . $ticket_id;
+            $ticketUrl = rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/dashboard/tickets?id=' . $ticket_id;
 
 
         @endphp

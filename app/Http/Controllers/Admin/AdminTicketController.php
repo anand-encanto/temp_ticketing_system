@@ -16,8 +16,9 @@ use App\Models\User;
 use App\Models\Tickets;
 use App\Models\Locations;
 
-class AdminTicketController extends BaseController{
-    
+class AdminTicketController extends BaseController
+{
+
     public function weeklySummary(Request $request)
     {
         $startOfWeek = Carbon::now()->startOfWeek();
@@ -33,8 +34,8 @@ class AdminTicketController extends BaseController{
 
         $overdueCount = $weeklyTickets->filter(function ($ticket) {
             return $ticket->status !== 'Closed' &&
-                   $ticket->expected_resolution_time !== null &&
-                   Carbon::parse($ticket->expected_resolution_time)->isPast();
+                $ticket->expected_resolution_time !== null &&
+                Carbon::parse($ticket->expected_resolution_time)->isPast();
         })->count();
 
         $resolutionTimes = $closedTickets->map(function ($ticket) {
@@ -171,7 +172,7 @@ class AdminTicketController extends BaseController{
 
     //     return response()->json($tickets);
     // }
-    
+
     public function urgentTickets(Request $request)
     {
         $startOfWeek = Carbon::now()->startOfWeek();
@@ -334,7 +335,7 @@ class AdminTicketController extends BaseController{
         }
 
         // Format for response
-        $techFormatted = collect($technicianStats)->map(function($stat) {
+        $techFormatted = collect($technicianStats)->map(function ($stat) {
             $avg = $stat['count'] > 0 ? round($stat['total_minutes'] / $stat['count']) : 0;
             return [
                 'technician' => $stat['name'],
@@ -346,7 +347,7 @@ class AdminTicketController extends BaseController{
 
         return response()->json([
             'technicians' => $techFormatted,
-            'departments' => collect($departmentStats)->map(function($stat) {
+            'departments' => collect($departmentStats)->map(function ($stat) {
                 $avg = $stat['count'] > 0 ? round($stat['total_minutes'] / $stat['count']) : 0;
                 return [
                     'department' => $stat['name'],
@@ -375,11 +376,11 @@ class AdminTicketController extends BaseController{
     public function volumeTrendReport(Request $request)
     {
         $sixMonthsAgo = Carbon::now()->subMonths(6)->startOfMonth();
-        
+
         $trends = Tickets::select(
-                DB::raw('count(id) as total'), 
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month")
-            )
+            DB::raw('count(id) as total'),
+            DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month")
+        )
             ->where('created_at', '>=', $sixMonthsAgo)
             ->groupBy('month')
             ->orderBy('month', 'asc')
@@ -412,9 +413,9 @@ class AdminTicketController extends BaseController{
         // Date Range Filter
         $startDate = $request->input('start_date', Carbon::now()->subDays(30)->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
-        
+
         $query->whereBetween('created_at', [
-            Carbon::parse($startDate)->startOfDay(), 
+            Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay()
         ]);
 
@@ -443,7 +444,7 @@ class AdminTicketController extends BaseController{
             ->select('is_overdue', DB::raw('count(*) as total'))
             ->groupBy('is_overdue')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'label' => $item->is_overdue ? 'Overdue' : 'On Time',
                     'total' => $item->total
@@ -467,5 +468,4 @@ class AdminTicketController extends BaseController{
             ]
         ]);
     }
-
 }

@@ -97,6 +97,20 @@
             <p>{{ $description }}</p>
         </div>
 
+        @php
+            $ticketUrl = rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/dashboard/tickets?id=' . $ticket_id;
+        @endphp
+
+        <a href="{{ $ticketUrl }}"
+           style="display:inline-block; background:#0069d9; color:#ffffff !important; padding:10px 18px; text-decoration:none; border-radius:6px; font-size:14px; margin-top:20px;">
+            View Ticket #{{ $ticket_id }}
+        </a>
+
+        <p style="margin-top:15px;font-size:13px;color:#555;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="{{ $ticketUrl }}">{{ $ticketUrl }}</a>
+        </p>
+
     </div>
 
     <div class="footer">

@@ -1490,7 +1490,7 @@ class TicketController extends BaseController
 
     private function frontendTicketUrl($ticketId)
     {
-        return rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/dashboard/tickets/' . $ticketId;
+        return rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/dashboard/tickets?id=' . $ticketId;
     }
 
     private function slaResolutionMinutesForPriority($priority)

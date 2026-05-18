@@ -1,32 +1,27 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\BaseController as BaseController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Validator;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
-use App\Models\User;
 use App\Models\Locations;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Validator;
 
-class LocationController extends BaseController{
+class LocationController extends BaseController
+{
 
     // All Location
-   public function getAllLocations(Request $request)
+    public function getAllLocations(Request $request)
     {
         try {
-            $query = Locations::orderBy('id','desc');
+            $query = Locations::orderBy('id', 'desc');
 
             if ($request->has('search')) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('code', 'like', "%$search%");
+                        ->orWhere('code', 'like', "%$search%");
                 });
             }
 
@@ -47,58 +42,102 @@ class LocationController extends BaseController{
         }
     }
 
-
     // Location Details
-    public function locationDetails(Request $request,$id){
-        try{
+    public function locationDetails(Request $request, $id)
+    {
+        try {
             $get_location = Locations::where(['id' => $id])->first();
             if ($get_location) {
                 return $this->sendResponse($get_location, 'Single Location details');
-            }else{
+            } else {
                 return $this->sendError('Error.', ['error' => 'Location not found'], 401);
             }
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
-        }    
+        }
     }
 
     // Location Add
-    public function addLocation(Request $request){
+    // public function addLocation(Request $request){
 
-        $validator = Validator::make($request->all(), [
-            'name'  => 'required|unique:locations',
-            'code'  => 'required|unique:locations',
-        ]);
+    //     $validator = Validator::make($request->all(), [
+    //         'name'  => 'required|unique:locations',
+    //         'code'  => 'required|unique:locations',
+    //     ]);
 
-        if ($validator->fails()) {
-            return response()->json([
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //                 'message' => $validator->errors()->first(),
+    //                 'status' => 400,
+    //                 'error'  => true,  // Set error to true
+    //             ],
+    //             422
+    //         );
+    //     }
+
+    //     $model           = new Locations();
+    //     $model->name     = $request->name;
+    //     $model->code     = $request->code;
+    //     $model->address  = $request->address;
+    //     $model->phone    = $request->phone;
+    //     $model->email    = $request->email;
+    //     $model->save();
+
+    //     return $this->sendResponse($model, 'Locations Added Successfully');
+    // }
+
+    public function addLocation(Request $request)
+    {
+        try {
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|unique:locations',
+                'code' => 'required|unique:locations',
+            ]);
+
+            if ($validator->fails()) {
+
+                return response()->json([
                     'message' => $validator->errors()->first(),
-                    'status' => 400,
-                    'error'  => true,  // Set error to true
-                ],
-                422
+                    'status'  => 400,
+                    'error'   => true,
+                ], 422);
+
+            }
+
+            $model          = new Locations();
+            $model->name    = $request->name;
+            $model->code    = $request->code;
+            $model->address = $request->address;
+
+            $model->save();
+
+            return $this->sendResponse(
+                $model,
+                'Locations Added Successfully'
             );
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+                'trace'   => $e->getTraceAsString(),
+            ], 500);
+
         }
-
-        $model           = new Locations();
-        $model->name     = $request->name;
-        $model->code     = $request->code;
-        $model->address  = $request->address;
-        $model->phone    = $request->phone;
-        $model->email    = $request->email;
-        $model->save();
-
-        return $this->sendResponse($model, 'Locations Added Successfully');
     }
 
-    public function editLocation(Request $request, $id){
+    public function editLocation(Request $request, $id)
+    {
         $location = Locations::find($id);
 
-        if (!$location) {
+        if (! $location) {
             return response()->json([
                 'message' => 'Location not found',
-                'status' => 404,
-                'error' => true,
+                'status'  => 404,
+                'error'   => true,
             ], 404);
         }
 
@@ -110,8 +149,8 @@ class LocationController extends BaseController{
         if ($validator->fails()) {
             return response()->json([
                 'message' => $validator->errors()->first(),
-                'status' => 400,
-                'error' => true,
+                'status'  => 400,
+                'error'   => true,
             ], 422);
         }
 
@@ -125,14 +164,14 @@ class LocationController extends BaseController{
         return $this->sendResponse($location, 'Location updated successfully');
     }
 
-
     // Delete Location
-    public function locationDelete(Request $request,$id){
+    public function locationDelete(Request $request, $id)
+    {
         try {
-            $user = Auth::guard('api')->user();
-            $Location  = Locations::find($id);
+            $user     = Auth::guard('api')->user();
+            $Location = Locations::find($id);
 
-            if (!$Location) {
+            if (! $Location) {
                 return $this->sendError('Location not found', ['error' => 'Location not found'], 401);
             }
 
@@ -140,8 +179,7 @@ class LocationController extends BaseController{
             return $this->sendResponse('Delete', 'Location deleted Successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
-        }    
+        }
     }
 
 }
-

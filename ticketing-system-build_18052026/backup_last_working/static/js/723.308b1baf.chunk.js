@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkticket_management_system=self.webpackChunkticket_management_system||[]).push([[723],{6723:(e,t,s)=>{s.r(t),s.d(t,{default:()=>n});s(5043);var a=s(579);const n=()=>(0,a.jsxs)("div",{children:[(0,a.jsx)("h1",{children:"Analytics Page"}),(0,a.jsx)("p",{children:"This is the Analytics page content. Replace with your actual implementation."})]})}}]);
+//# sourceMappingURL=723.308b1baf.chunk.js.map

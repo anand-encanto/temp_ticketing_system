@@ -1,0 +1,408 @@
+{
+  "info": {
+    "_postman_id": "f3c6cba4-77b1-4f11-a2b4-super-admin-outlet-apis",
+    "name": "super addmin outlet apis",
+    "description": "Postman collection for testing outlet/location CRUD APIs with super admin login. Login stores data.token into auth_token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('ticket_system_live')) {",
+          "    pm.collectionVariables.set('ticket_system_live', 'https://support.mcdonalds.mu/');",
+          "}",
+          "if (!pm.collectionVariables.get('outlet_id')) {",
+          "    pm.collectionVariables.set('outlet_id', '1');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "ticket_system_live",
+      "value": "https://support.mcdonalds.mu/",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email_or_username",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "outlet_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "outlet_name",
+      "value": "Postman Test Outlet",
+      "type": "string"
+    },
+    {
+      "key": "outlet_code",
+      "value": "PM-TEST-001",
+      "type": "string"
+    },
+    {
+      "key": "outlet_address",
+      "value": "Postman test address",
+      "type": "string"
+    },
+    {
+      "key": "outlet_phone",
+      "value": "2300000000",
+      "type": "string"
+    },
+    {
+      "key": "outlet_email",
+      "value": "postman.outlet@example.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Super Admin Login",
+      "item": [
+        {
+          "name": "Login - set auth_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const token = json && json.data && json.data.token;",
+                  "",
+                  "pm.test('Response contains data.token', function () {",
+                  "    pm.expect(token, 'data.token').to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('auth_token', token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email_or_username\": \"{{email_or_username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ticket_system_live}}api/login",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Outlet APIs",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List outlets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request completed', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/list",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List outlets - search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/list?search={{outlet_name}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{outlet_name}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List outlets - paginate true",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/list?paginate=true",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "paginate",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add outlet - saves outlet_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Outlet add request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const outletId = json && json.data && json.data.id;",
+                  "",
+                  "if (outletId) {",
+                  "    pm.collectionVariables.set('outlet_id', outletId);",
+                  "}",
+                  "",
+                  "pm.test('Outlet ID is available', function () {",
+                  "    pm.expect(outletId, 'data.id').to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{outlet_name}}\",\n  \"code\": \"{{outlet_code}}\",\n  \"address\": \"{{outlet_address}}\",\n  \"phone\": \"{{outlet_phone}}\",\n  \"email\": \"{{outlet_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/add",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "add"
+              ]
+            },
+            "description": "Use unique outlet_name and outlet_code each time, because both are validated as unique."
+          },
+          "response": []
+        },
+        {
+          "name": "Outlet details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/details/{{outlet_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "details",
+                "{{outlet_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit outlet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{outlet_name}} Updated\",\n  \"code\": \"{{outlet_code}}\",\n  \"address\": \"{{outlet_address}} Updated\",\n  \"phone\": \"{{outlet_phone}}\",\n  \"email\": \"{{outlet_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/edit/{{outlet_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "edit",
+                "{{outlet_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete outlet - DELETE method",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/delete/{{outlet_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "delete",
+                "{{outlet_id}}"
+              ]
+            },
+            "description": "Use only a test outlet. This deletes the outlet record."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete outlet - GET backward compatibility",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/location/delete/{{outlet_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "location",
+                "delete",
+                "{{outlet_id}}"
+              ]
+            },
+            "description": "Kept only to verify backward compatibility. Prefer DELETE going forward."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

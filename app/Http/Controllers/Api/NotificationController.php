@@ -50,7 +50,6 @@ class NotificationController extends BaseController{
     }
 
 
-
     // Update Notification
     public function updateNotification(Request $request, $id)
     {
