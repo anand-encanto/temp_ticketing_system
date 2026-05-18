@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 use App\Models\User;
 use App\Models\Tickets;
+use App\Models\SlaLevel;
 
 class AdminController extends BaseController{
     
@@ -97,7 +98,10 @@ class AdminController extends BaseController{
             }
 
             if ($request->has('paginate') && $request->paginate == 'true') {
-                $get_users = $query->paginate(10);
+                $perPage = (int) $request->input('per_page', 10);
+                $perPage = $perPage > 0 ? min($perPage, 100) : 10;
+
+                $get_users = $query->paginate($perPage);
             } else {
                 $get_users = $query->get();
             }
@@ -193,6 +197,18 @@ class AdminController extends BaseController{
     /**
      * Req 12: Dynamic SLA Modification (Super Admin Only)
      */
+    public function getSlaSettings(Request $request)
+    {
+        try {
+            $slaSettings = SlaLevel::orderByRaw("FIELD(priority, 'Urgent', 'High', 'Medium', 'Low')")
+                ->get();
+
+            return $this->sendResponse($slaSettings, 'SLA settings list');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong.', $e->getMessage(), 422);
+        }
+    }
+
     public function updateSlaSettings(Request $request)
     {
         $validator = \Validator::make($request->all(), [

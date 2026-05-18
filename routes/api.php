@@ -48,6 +48,7 @@ Route::post('location/add', [LocationController::class, 'addLocation']);
 Route::post('location/edit/{id}', [LocationController::class, 'editLocation']);
 Route::get('location/details/{id}', [LocationController::class, 'locationDetails']);
 Route::get('location/delete/{id}', [LocationController::class, 'locationDelete']);
+Route::delete('location/delete/{id}', [LocationController::class, 'locationDelete']);
 
 // Department Routes
 Route::get('department/list', [DepartmentController::class, 'getAllDepartments']);
@@ -55,10 +56,12 @@ Route::post('department/add', [DepartmentController::class, 'addDepartment']);
 Route::post('department/edit/{id}', [DepartmentController::class, 'editDepartment']);
 Route::get('department/details/{id}', [DepartmentController::class, 'departmentDetails']);
 Route::get('department/delete/{id}', [DepartmentController::class, 'departmentDelete']);
+Route::delete('department/delete/{id}', [DepartmentController::class, 'departmentDelete']);
 
 Route::get('notification/my', [NotificationController::class, 'getMyNotification']);
 Route::post('notification/update/{id}', [NotificationController::class, 'updateNotification']);
 Route::get('notification/delete/{id}', [NotificationController::class, 'notificationDelete']);
+Route::delete('notification/delete/{id}', [NotificationController::class, 'notificationDelete']);
 
 // Signup
 Route::post('register', [LoginController::class, 'register'])->name('register');
@@ -78,6 +81,8 @@ Route::middleware('AdminLogin')->group(function () {
 		Route::post('user/edit/{id}', [AdminController::class, 'editUser']);
 		Route::get('user/details/{id}', [AdminController::class, 'userDetails']);
 		Route::get('user/delete/{id}', [AdminController::class, 'userDelete']);
+		Route::delete('user/delete/{id}', [AdminController::class, 'userDelete']);
+		Route::get('sla-settings/list', [AdminController::class, 'getSlaSettings']);
 		Route::post('sla-settings/update', [AdminController::class, 'updateSlaSettings']);
 
 		// Ticket Management
@@ -126,6 +131,7 @@ Route::middleware('Login')->group(function () {
 	Route::post('comment/add/{ticketId}', [CommentController::class, 'addComment']);
 	Route::post('comment/edit/{id}', [CommentController::class, 'editComment']);
 	Route::get('comment/delete/{id}', [CommentController::class, 'commentDelete']);
+	Route::delete('comment/delete/{id}', [CommentController::class, 'commentDelete']);
 
 	// Depatment
 	Route::get('get_all_executive', [HomeController::class, 'getAllExecutive']);

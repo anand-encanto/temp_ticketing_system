@@ -420,6 +420,8 @@ class TicketController extends BaseController
                     $ticket->video = $baseUrl . '/public/uploads/tickets/' . ltrim($ticket->video, '/');
                 }
 
+                $this->addFrontendTicketFields($ticket);
+
                 return $ticket;
             });
 
@@ -748,6 +750,8 @@ class TicketController extends BaseController
                     });
                 }
 
+                $this->addFrontendTicketFields($ticket);
+
                 return $ticket;
             });
 
@@ -798,6 +802,8 @@ class TicketController extends BaseController
                 } else {
                     $get_ticket->video_full_url = null;
                 }
+
+                $this->addFrontendTicketFields($get_ticket);
 
                 return $this->sendResponse($get_ticket, 'Single Ticket details');
             } else {
@@ -1211,6 +1217,9 @@ class TicketController extends BaseController
                         return $image;
                     });
                 }
+
+                $this->addFrontendTicketFields($ticket);
+
                 return $ticket;
             });
 
@@ -1430,6 +1439,90 @@ class TicketController extends BaseController
             'total_overdue_tickets'       => $overdueCount,
             'min_resolution_time_minutes' => $humanReadable,
         ]);
+    }
+
+    private function addFrontendTicketFields($ticket)
+    {
+        $ticket->frontend_ticket_url = $this->frontendTicketUrl($ticket->id);
+
+        $targetMinutes = $this->slaResolutionMinutesForPriority($ticket->priority);
+        $assignedAt    = $this->carbonValue($ticket->assigned_at ?? null);
+        $resolvedAt    = $this->carbonValue($ticket->resolved_at ?? null);
+        $closedAt      = $this->carbonValue($ticket->closed_at ?? null);
+        $createdAt     = $this->carbonValue($ticket->created_at ?? null);
+        $now           = Carbon::now();
+
+        $ticket->post_assignment_sla_target_minutes = $targetMinutes;
+        $ticket->post_assignment_deadline = null;
+        $ticket->post_assignment_sla_status = 'not_started';
+        $ticket->post_assignment_sla_elapsed_minutes = null;
+        $ticket->post_assignment_sla_remaining_minutes = null;
+
+        if ($assignedAt && $targetMinutes) {
+            $deadline = $assignedAt->copy()->addMinutes($targetMinutes);
+            $finishAt = $resolvedAt ?: $closedAt ?: $now;
+
+            $ticket->post_assignment_deadline = $deadline->format('Y-m-d H:i:s');
+            $ticket->post_assignment_sla_elapsed_minutes = max(0, $assignedAt->diffInMinutes($finishAt, false));
+            $ticket->post_assignment_sla_remaining_minutes = max(0, $now->diffInMinutes($deadline, false));
+
+            if ($resolvedAt || $closedAt) {
+                $ticket->post_assignment_sla_status = $finishAt->lte($deadline) ? 'met' : 'breached';
+            } else {
+                $ticket->post_assignment_sla_status = $now->gt($deadline) ? 'breached' : 'in_progress';
+            }
+        }
+
+        $technicianFinishAt = $resolvedAt ?: $closedAt;
+        $technicianMinutes = ($assignedAt && $technicianFinishAt)
+            ? max(0, $assignedAt->diffInMinutes($technicianFinishAt, false))
+            : null;
+
+        $lifecycleMinutes = ($createdAt && $closedAt)
+            ? max(0, $createdAt->diffInMinutes($closedAt, false))
+            : null;
+
+        $ticket->technician_resolution_minutes = $technicianMinutes;
+        $ticket->technician_resolution_time = $this->formatDuration($technicianMinutes);
+        $ticket->ticket_lifecycle_minutes = $lifecycleMinutes;
+        $ticket->ticket_lifecycle_time = $this->formatDuration($lifecycleMinutes);
+    }
+
+    private function frontendTicketUrl($ticketId)
+    {
+        return rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/dashboard/tickets/' . $ticketId;
+    }
+
+    private function slaResolutionMinutesForPriority($priority)
+    {
+        static $slaMinutes = null;
+
+        if ($slaMinutes === null) {
+            $slaMinutes = \App\Models\SlaLevel::pluck('resolution_time_minutes', 'priority')->toArray();
+        }
+
+        return isset($slaMinutes[$priority]) ? (int) $slaMinutes[$priority] : null;
+    }
+
+    private function carbonValue($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        return $value instanceof Carbon ? $value->copy() : Carbon::parse($value);
+    }
+
+    private function formatDuration($minutes)
+    {
+        if ($minutes === null) {
+            return null;
+        }
+
+        $hours = intdiv((int) $minutes, 60);
+        $mins = (int) $minutes % 60;
+
+        return $hours > 0 ? "{$hours} hrs {$mins} mins" : "{$mins} mins";
     }
 
     public static function send_mail($data)

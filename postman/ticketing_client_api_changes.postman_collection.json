@@ -1,0 +1,584 @@
+{
+  "info": {
+    "_postman_id": "8f1f15c9-3f78-4f0c-9c5f-ticketing-api-changes",
+    "name": "ticketing - client API changes testing",
+    "description": "Postman collection for testing the latest non-email backend changes. Login stores the Passport token in auth_token and protected APIs use it automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('ticket_system_live')) {",
+          "    pm.collectionVariables.set('ticket_system_live', 'https://support.mcdonalds.mu/');",
+          "}",
+          "if (!pm.collectionVariables.get('ticket_id')) {",
+          "    pm.collectionVariables.set('ticket_id', '150');",
+          "}",
+          "if (!pm.collectionVariables.get('user_id')) {",
+          "    pm.collectionVariables.set('user_id', '32');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "ticket_system_live",
+      "value": "https://support.mcdonalds.mu/",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email_or_username",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticket_id",
+      "value": "150",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "32",
+      "type": "string"
+    },
+    {
+      "key": "per_page",
+      "value": "25",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Login - set auth_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const token = json && json.data && json.data.token;",
+                  "",
+                  "pm.test('Response contains data.token', function () {",
+                  "    pm.expect(token, 'data.token').to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('auth_token', token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email_or_username\": \"{{email_or_username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ticket_system_live}}api/login",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Admin User APIs",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Admin User List - paginate true with per_page 25",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('Existing wrapper keys are present', function () {",
+                  "    pm.expect(json).to.have.property('success');",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Paginator uses requested per_page', function () {",
+                  "    pm.expect(json.data.per_page).to.eql(Number(pm.collectionVariables.get('per_page')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/user/list?paginate=true&page=1&per_page={{per_page}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "user",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "paginate",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "{{per_page}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin User Delete - DELETE method",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/user/delete/{{user_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "user",
+                "delete",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Use a test user ID only. This endpoint deletes the user record."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin User Delete - GET backward compatibility",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/user/delete/{{user_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "user",
+                "delete",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Use a test user ID only. Kept to confirm existing frontend compatibility."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - SLA Settings",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Admin SLA Settings List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('SLA settings returned in existing wrapper', function () {",
+                  "    pm.expect(json).to.have.property('success', true);",
+                  "    pm.expect(json.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/sla-settings/list",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "sla-settings",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Ticket APIs",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Admin Ticket List - additive fields check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const firstTicket = json && json.data && json.data.data && json.data.data[0];",
+                  "",
+                  "if (firstTicket) {",
+                  "    pm.collectionVariables.set('ticket_id', firstTicket.id);",
+                  "}",
+                  "",
+                  "pm.test('First ticket has additive frontend URL and KPI/SLA keys', function () {",
+                  "    pm.expect(firstTicket).to.be.an('object');",
+                  "    pm.expect(firstTicket).to.have.property('frontend_ticket_url');",
+                  "    pm.expect(firstTicket).to.have.property('post_assignment_sla_status');",
+                  "    pm.expect(firstTicket).to.have.property('technician_resolution_minutes');",
+                  "    pm.expect(firstTicket).to.have.property('ticket_lifecycle_minutes');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/ticket/list?page=1&per_page={{per_page}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "ticket",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "{{per_page}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Ticket Details - additive fields check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request succeeded', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const ticket = json && json.data;",
+                  "",
+                  "pm.test('Ticket detail has additive frontend URL and KPI/SLA keys', function () {",
+                  "    pm.expect(ticket).to.be.an('object');",
+                  "    pm.expect(ticket).to.have.property('frontend_ticket_url');",
+                  "    pm.expect(ticket.frontend_ticket_url).to.include('/dashboard/tickets/');",
+                  "    pm.expect(ticket).to.have.property('post_assignment_sla_status');",
+                  "    pm.expect(ticket).to.have.property('technician_resolution_minutes');",
+                  "    pm.expect(ticket).to.have.property('ticket_lifecycle_minutes');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/admin/ticket/details/{{ticket_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "admin",
+                "ticket",
+                "details",
+                "{{ticket_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Standard Ticket List - additive fields check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/ticket/list?page=1&per_page={{per_page}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "ticket",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "{{per_page}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Standard Ticket Details - additive fields check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/ticket/details/{{ticket_id}}",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "ticket",
+                "details",
+                "{{ticket_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Tickets - additive fields check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/ticket/my?page=1",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "ticket",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assigned Tickets - additive fields check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{ticket_system_live}}api/ticket/assigned_list?page=1",
+              "host": [
+                "{{ticket_system_live}}api"
+              ],
+              "path": [
+                "ticket",
+                "assigned_list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Frontend URL Reference",
+      "item": [
+        {
+          "name": "Ticket Detail Page URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://support.mcdonalds.mu/dashboard/tickets/{{ticket_id}}",
+              "protocol": "https",
+              "host": [
+                "support",
+                "mcdonalds",
+                "mu"
+              ],
+              "path": [
+                "dashboard",
+                "tickets",
+                "{{ticket_id}}"
+              ]
+            },
+            "description": "Frontend ticket detail route reference for direct ticket opening."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
