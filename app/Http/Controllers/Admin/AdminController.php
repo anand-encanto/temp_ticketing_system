@@ -16,11 +16,13 @@ use App\Models\User;
 use App\Models\Tickets;
 use App\Models\SlaLevel;
 
-class AdminController extends BaseController{
-    
+class AdminController extends BaseController
+{
+
     // User Add
-    public function addUser(Request $request){
-    
+    public function addUser(Request $request)
+    {
+
         $validator = Validator::make($request->all(), [
             'name'             => 'required|string|max:255',
             'username'         => 'required|unique:users,username',
@@ -34,9 +36,10 @@ class AdminController extends BaseController{
             'outlet_email'     => 'nullable|email',
             'mobile'           => 'nullable|string',
         ]);
-    
+
         if ($validator->fails()) {
-            return response()->json([
+            return response()->json(
+                [
                     'message' => $validator->errors()->first(),
                     'status' => 400,
                     'error'  => true,  // Set error to true
@@ -44,7 +47,7 @@ class AdminController extends BaseController{
                 422
             );
         }
-    
+
         $model                  = new User();
         $model->name            = $request->name;
         $model->username        = $request->username;
@@ -58,15 +61,15 @@ class AdminController extends BaseController{
         $model->outlet_email    = $request->outlet_email;
         $model->mobile          = $request->mobile;
         $model->save();
-        
+
 
         // Add Notification
         $ticket_id      = $model->id;
         $trigger_event  = 'New User';
         $recipient_id   = null;
         $title          = 'New user registration';
-        $message        = 'New user, '.$request->name.' has been register on panel';
-        $result_add     = addNotification($ticket_id,$trigger_event,$recipient_id,'1',$title,$message,'unread'); 
+        $message        = 'New user, ' . $request->name . ' has been register on panel';
+        $result_add     = addNotification($ticket_id, $trigger_event, $recipient_id, '1', $title, $message, 'unread');
 
         return $this->sendResponse($model, 'User Added Successfully');
     }
@@ -75,7 +78,9 @@ class AdminController extends BaseController{
     public function getAllUsers(Request $request)
     {
         try {
-            $query = User::with(['department:id,name', 'location:id,name'])->where('id', '!=', 1);
+            $query = User::with(['department:id,name', 'location:id,name'])
+                ->where('id', '!=', 1)
+                ->latest();
 
             if ($request->has('department_id')) {
                 $query->where('department_id', $request->department_id);
@@ -89,11 +94,11 @@ class AdminController extends BaseController{
                 $query->where('role', $request->role);
             }
 
-           if ($request->has('search')) {
+            if ($request->has('search')) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('email', 'like', "%$search%");
+                        ->orWhere('email', 'like', "%$search%");
                 });
             }
 
@@ -117,17 +122,18 @@ class AdminController extends BaseController{
     }
 
     // User Details
-    public function userDetails(Request $request,$id){
-        try{
+    public function userDetails(Request $request, $id)
+    {
+        try {
             $get_user = User::where(['id' => $id])->first();
             if ($get_user) {
                 return $this->sendResponse($get_user, 'Single User details');
-            }else{
+            } else {
                 return $this->sendError('Error.', ['error' => 'User not found'], 401);
             }
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
-        }    
+        }
     }
 
     public function editUser(Request $request, $id)
@@ -171,14 +177,15 @@ class AdminController extends BaseController{
         if ($request->has('outlet_phone')) $user->outlet_phone = $request->outlet_phone;
         if ($request->has('outlet_email')) $user->outlet_email = $request->outlet_email;
         if ($request->has('mobile')) $user->mobile = $request->mobile;
-        
+
         $user->save();
 
         return $this->sendResponse($user, 'User updated successfully.');
     }
 
     // Delete User
-    public function userDelete(Request $request,$id){
+    public function userDelete(Request $request, $id)
+    {
         try {
             $user = Auth::guard('api')->user();
             $user  = User::find($id);
@@ -191,7 +198,7 @@ class AdminController extends BaseController{
             return $this->sendResponse('Delete', 'User deleted Successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
-        }    
+        }
     }
 
     /**
@@ -236,4 +243,3 @@ class AdminController extends BaseController{
         return $this->sendError('SLA not found.');
     }
 }
-
