@@ -17,7 +17,8 @@ use App\Models\Tickets;
 use App\Models\Comment;
 use App\Models\Notification;
 
-class CommentController extends BaseController{
+class CommentController extends BaseController
+{
 
     // Add Comment
     public function addComment(Request $request, $ticketId)
@@ -52,16 +53,14 @@ class CommentController extends BaseController{
         $ticket_id     = $ticket->id;
         $trigger_event = 'Comment';
 
-      
+
         if ($ticket->submitter_id == $user->id) {
             $title   = 'New Comment Added!';
             $message = "A new comment has been added to your department's ticket.";
-        } 
-        elseif ($ticket->department_id == $user->department_id) {
+        } elseif ($ticket->department_id == $user->department_id) {
             $title   = 'New Comment Added!';
             $message = 'A new comment has been added to your ticket.';
-        } 
-        else {
+        } else {
             // Fallback (if needed)
             $title   = 'New Comment Added!';
             $message = "A new comment has been added to your department's ticket";
@@ -86,8 +85,8 @@ class CommentController extends BaseController{
         $emailUsers = $emailUsers->merge($admins);
 
         $deptHeads = User::where('department_id', $ticket->department_id)
-                          ->where('role', 'department_head')
-                          ->get();
+            ->where('role', 'department_head')
+            ->get();
         $emailUsers = $emailUsers->merge($deptHeads);
 
         $deptUsers = User::where('department_id', $ticket->department_id)->get();
@@ -109,7 +108,7 @@ class CommentController extends BaseController{
 
             $mailData = [
                 'email'         => $emailUser->email,
-                'subject'       => $message. '#' . $ticket->id,
+                'subject'       => $message . '#' . $ticket->id,
                 'page'          => 'email.ticket_comment',
                 'ticket_id'     => $ticket->id,
                 'ticket_title'  => $ticket->title ?? 'N/A',
@@ -129,14 +128,15 @@ class CommentController extends BaseController{
     // Edit Comment
     public function editComment(Request $request, $id)
     {
-		$user = Auth::guard('api')->user();
+        $user = Auth::guard('api')->user();
 
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
+            return response()->json(
+                [
                     'message' => $validator->errors()->first(),
                     'status' => 422,
                     'error'  => true,
@@ -161,7 +161,8 @@ class CommentController extends BaseController{
     }
 
     // Delete Comment
-    public function commentDelete(Request $request,$id){
+    public function commentDelete(Request $request, $id)
+    {
         try {
             $user = Auth::guard('api')->user();
 
@@ -172,24 +173,26 @@ class CommentController extends BaseController{
             }
 
             if ($comment->user_id !== $user->id) {
-	            return response()->json(['message' => 'Unauthorized'], 403);
-	        }
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
 
             $comment->delete();
             return $this->sendResponse('Delete', 'Comment deleted Successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error.', $e->getMessage());
-        }    
+        }
     }
 
 
-    public static function send_mail($data)
-    {
-        Mail::send($data['page'], $data, function ($message) use ($data) {
-            $message->to($data['email'])
-                    ->subject($data['subject'])
-                    ->from('admin@example.com', config('app.name'));
-        });
-    }
+    // public static function send_mail($data)
+    // {
+    //     Mail::send($data['page'], $data, function ($message) use ($data) {
+    //         $message->to($data['email'])
+    //                 ->subject($data['subject'])
+    //                 ->from('admin@example.com', config('app.name'));
+    //     });
+    // }
+
+
 
 }

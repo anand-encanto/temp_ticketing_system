@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\MaintenanceController;
+use Illuminate\Support\Facades\Mail;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,122 @@ use App\Http\Controllers\Api\MaintenanceController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::get('/client-smtp-test', function () {
+
+    try {
+
+        Mail::send([], [], function ($message) {
+
+            $message->to('anvshanvsh6754@gmail.com')
+                ->subject('CLIENT SMTP LIVE TEST')
+                ->html('<h1>Client SMTP Test</h1><p>Testing from live Laravel.</p>')
+                ->from(
+                    config('mail.from.address'),
+                    config('mail.from.name')
+                );
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mail attempted'
+        ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+    }
+});
+
+Route::get('/symfony-mail-test', function () {
+
+	try {
+
+		Mail::raw('Symfony Mailer + PHP OpenSSL Test', function ($message) {
+
+			$message->to('anvshanvsh6754@gmail.com')
+				->subject('Symfony Mailer Test')
+				->from(
+					config('mail.from.address'),
+					config('mail.from.name')
+				);
+		});
+
+		return response()->json([
+
+			'success' => true,
+
+			'message' => 'Mail send attempted successfully',
+
+			'mailer' => config('mail.default'),
+
+			'host' => config('mail.mailers.smtp.host'),
+
+			'port' => config('mail.mailers.smtp.port'),
+
+			'encryption' => config('mail.mailers.smtp.encryption'),
+
+			'php_version' => phpversion(),
+
+			'openssl_version' => defined('OPENSSL_VERSION_TEXT')
+				? OPENSSL_VERSION_TEXT
+				: 'OpenSSL not available',
+		]);
+	} catch (\Throwable $e) {
+
+		return response()->json([
+
+			'success' => false,
+
+			'error_message' => $e->getMessage(),
+
+			'file' => $e->getFile(),
+
+			'line' => $e->getLine(),
+
+			'trace' => $e->getTraceAsString(),
+		]);
+	}
+});
+
+
+Route::get('/client-smtp-test', function () {
+
+	try {
+
+		Mail::send([], [], function ($message) {
+
+			$message->to('anvshanvsh6754@gmail.com')
+				->subject('CLIENT SMTP LIVE TEST')
+				->html('<h1>Client SMTP Test</h1><p>Testing from live Laravel.</p>')
+				->from(
+					config('mail.from.address'),
+					config('mail.from.name')
+				);
+		});
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Mail attempted'
+		]);
+	} catch (\Throwable $e) {
+
+		return response()->json([
+			'success' => false,
+			'error' => $e->getMessage(),
+			'file' => $e->getFile(),
+			'line' => $e->getLine(),
+		]);
+	}
+});
+
+
+
 
 // SLA Maintenance (Triggered by External Cron)
 Route::get('maintenance/check-sla', [MaintenanceController::class, 'checkSlaBreaches']);
@@ -41,39 +158,39 @@ Route::get('test-api', function () {
 });
 
 Route::get('test-email', function (\Illuminate\Http\Request $request) {
-    $to = $request->input('to', 'encantodeveloper@gmail.com');
+	$to = $request->input('to', 'encantodeveloper@gmail.com');
 
-    // Set the mail configuration dynamically for this test
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.transport', 'smtp');
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.host', 'smtp.gmail.com');
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.port', 587);
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.encryption', 'tls');
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.username', 'encantodeveloper@gmail.com');
-    \Illuminate\Support\Facades\Config::set('mail.mailers.smtp.password', 'zsrylkrtypkokyik');
-    \Illuminate\Support\Facades\Config::set('mail.from.address', 'encantodeveloper@gmail.com');
-    \Illuminate\Support\Facades\Config::set('mail.from.name', "McDonald's Support");
+	// Set the mail configuration dynamically for this test
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.transport', 'smtp');
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.host', 'smtp.gmail.com');
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.port', 587);
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.encryption', 'tls');
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.username', 'encantodeveloper@gmail.com');
+	\Illuminate\Support\Facades\Config::set('mail.mailers.smtp.password', 'zsrylkrtypkokyik');
+	\Illuminate\Support\Facades\Config::set('mail.from.address', 'encantodeveloper@gmail.com');
+	\Illuminate\Support\Facades\Config::set('mail.from.name', "McDonald's Support");
 
-    try {
-        \Illuminate\Support\Facades\Mail::raw("This is a test email to verify SMTP credentials.\n\n" . 
-                    "Host: smtp.gmail.com\n" . 
-                    "Port: 587\n" . 
-                    "Username: encantodeveloper@gmail.com", function ($message) use ($to) {
-            $message->to($to)
-                    ->subject('SMTP Credentials Verification - Ticketing System via API');
-        });
-        
-        return response()->json([
-            'status' => true,
-            'message' => 'Email sent successfully! Please check your inbox (and spam/junk folder).',
-            'to' => $to
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Failed to send email. There seems to be an issue with the SMTP credentials or network connection.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
+	try {
+		\Illuminate\Support\Facades\Mail::raw("This is a test email to verify SMTP credentials.\n\n" .
+			"Host: smtp.gmail.com\n" .
+			"Port: 587\n" .
+			"Username: encantodeveloper@gmail.com", function ($message) use ($to) {
+			$message->to($to)
+				->subject('SMTP Credentials Verification - Ticketing System via API');
+		});
+
+		return response()->json([
+			'status' => true,
+			'message' => 'Email sent successfully! Please check your inbox (and spam/junk folder).',
+			'to' => $to
+		]);
+	} catch (\Exception $e) {
+		return response()->json([
+			'status' => false,
+			'message' => 'Failed to send email. There seems to be an issue with the SMTP credentials or network connection.',
+			'error' => $e->getMessage()
+		], 500);
+	}
 });
 
 

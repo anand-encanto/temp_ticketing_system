@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use App\Models\User;
 use App\Models\Tickets;
 use App\Models\SlaLevel;
+use App\Http\Controllers\Api\TicketController;
 
 class AdminController extends BaseController
 {
@@ -48,11 +49,14 @@ class AdminController extends BaseController
             );
         }
 
+        // Capture plain password before hashing (needed for welcome email)
+        $plain_password = $request->password;
+
         $model                  = new User();
         $model->name            = $request->name;
         $model->username        = $request->username;
         $model->email           = $request->email;
-        $model->password        = Hash::make($request->password);
+        $model->password        = Hash::make($plain_password);
         $model->role            = $request->role;
         $model->location_id     = $request->location_id;
         $model->department_id   = $request->department_id;
@@ -62,7 +66,6 @@ class AdminController extends BaseController
         $model->mobile          = $request->mobile;
         $model->save();
 
-
         // Add Notification
         $ticket_id      = $model->id;
         $trigger_event  = 'New User';
@@ -70,6 +73,22 @@ class AdminController extends BaseController
         $title          = 'New user registration';
         $message        = 'New user, ' . $request->name . ' has been register on panel';
         $result_add     = addNotification($ticket_id, $trigger_event, $recipient_id, '1', $title, $message, 'unread');
+
+        // Send welcome email to the newly created user
+        if ($model->email) {
+            $mailData = [
+                'email'          => $model->email,
+                'subject'        => 'Welcome to ' . config('app.name') . ' - Your Account Details',
+                'page'           => 'email.user_welcome',
+                'user_name'      => $model->name,
+                'user_email'     => $model->email,
+                'username'       => $model->username,
+                'plain_password' => $plain_password,
+                'login_url'      => rtrim(env('FRONTEND_URL', config('app.url')), '/') . '/login',
+            ];
+
+            TicketController::send_mail($mailData);
+        }
 
         return $this->sendResponse($model, 'User Added Successfully');
     }
